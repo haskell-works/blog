@@ -5,6 +5,7 @@ html {
 body {
   font-size: 1.6rem;
   color: #000;
+  font-family: Avenir,'Open Sans',sans-serif;
 }
 
 header {

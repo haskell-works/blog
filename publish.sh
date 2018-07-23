@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+./run-stack.sh build
+
 stack exec site rebuild
 
 rsync -a                          \
