@@ -15,11 +15,36 @@ Memory in particular can be a serious problem because we like to store
 large files in S3 where the pricing model and latency of `GET` queries
 favours the storage of large files in the hundreds of MBs each.
 
-The danger without storing such large files, however, is we can run
+The danger with storing such large files, however, is we can run
 out of memory just trying to parse them.
 
 To illustrate the problem, here is a sample program that parses a
-25MB JSON file.
+JSON file and reports how much memory it uses before exiting.
+
+```haskell
+import Control.Monad
+import Data.Aeson
+import GHC.Stats
+import System.Posix.Process
+import System.Process
+
+import qualified Data.ByteString.Lazy as BS
+import qualified System.Environment   as IO
+
+main :: IO ()
+main = do
+  pid <- getProcessID
+  (filename:_) <- IO.getArgs
+  bs <- BS.readFile filename
+  let !maybeJson = decode bs :: Maybe Value
+
+  system $ "ps aux | grep " <> show pid <> " | grep -v grep"
+
+  forM_ maybeJson $ \_ ->
+    putStrLn "Done"
+```
+
+This program is used to parse a `25MB` file as follows:
 
 ```bash
 $ git clone git@github.com:haskell-works/blog-examples.git
@@ -33,7 +58,7 @@ jky              32237 394.0  1.9 1078037040 323084 s001  S+   10:05pm   0:03.79
 Done
 ```
 
-The program self-reports that after parsing the file, it is using 394MB of memory!
+The program self-reports that after parsing the file, it is using `394MB` of memory!
 
 ```bash
 $ time gzip hospitalisation.json
@@ -49,9 +74,9 @@ $ ls -lh hospitalisation.json.gz
 -rw-r--r--  1 jky  staff   4.5M 24 Jul 22:00 hospitalisation.json.gz
 ```
 
-So now we're look at unzipping and then parsing at a memory cost of 394M,
-or 87x the size of the compressed 4.5MB file or 16x the the size of the
-original 25MB file.
+So now we're look at unzipping and then parsing at a memory cost of `394M`,
+or `87x` the size of the compressed `4.5MB` file or `16x` the the size of the
+original `25MB` file.
 
 ## Why does this happen
 
@@ -107,14 +132,14 @@ Another point of consideration when parsing large datasets is how long it takes 
 parse the file.  Often we would just dismiss the slowness to the parsing being
 IO bound, but is it really?
 
-Here we measure how long it takes to parse a 25MB JSON file (on my Macbook Pro):
+Here we measure how long it takes to parse a `25MB` JSON file (on my Macbook Pro):
 
 ```bash
 $ time stack exec simple-json hospitalisation.json > /dev/null
 stack exec simple-json hospitalisation.json > /dev/null  2.96s user 1.21s system 328% cpu 1.270 total
 ```
 
-At 8.44 MB/s (25 MB / 2.96 s), is that fast or close to IO bound?
+At `8.44 MB/s` (`25 MB / 2.96 s`), is that fast or close to IO bound?
 
 Not even close.
 
