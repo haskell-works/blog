@@ -1,7 +1,8 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
-import           Hakyll
+
+import Data.Monoid ((<>))
+import Hakyll
 
 
 --------------------------------------------------------------------------------
@@ -28,13 +29,20 @@ main = hakyll $ do
       >>= loadAndApplyTemplate "templates/default.html" postCtx
       >>= relativizeUrls
 
+  match "drafts/*" $ do
+    route $ setExtension "html"
+    compile $ pandocCompiler
+      >>= loadAndApplyTemplate "templates/post.html"    postCtx
+      >>= loadAndApplyTemplate "templates/default.html" postCtx
+      >>= relativizeUrls
+
   create ["archive.html"] $ do
     route idRoute
     compile $ do
       posts <- recentFirst =<< loadAll "posts/*"
       let archiveCtx =
-            listField "posts" postCtx (return posts) `mappend`
-            constField "title" "Archives"            `mappend`
+            listField "posts" postCtx (return posts) <>
+            constField "title" "Archives"            <>
             defaultContext
 
       makeItem ""
@@ -42,6 +50,19 @@ main = hakyll $ do
         >>= loadAndApplyTemplate "templates/default.html" archiveCtx
         >>= relativizeUrls
 
+  create ["drafts.html"] $ do
+    route idRoute
+    compile $ do
+      posts <- recentFirst =<< loadAll "drafts/*"
+      let archiveCtx =
+            listField "posts" postCtx (return posts) <>
+            constField "title" "Drafts"              <>
+            defaultContext
+
+      makeItem ""
+        >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+        >>= loadAndApplyTemplate "templates/default.html" archiveCtx
+        >>= relativizeUrls
 
   match "index.html" $ do
     route idRoute

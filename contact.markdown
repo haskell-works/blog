@@ -1,6 +1,7 @@
 ---
-title: Contact
+title: Contact Haskell Works
 ---
 
-I live in a small hut in the mountains of Kumano Kodō on Kii Hantō and would not
-like to be contacted.
+Haskell Works may be contacted by raising a ticket against the
+[blog Github repository](https://github.com/haskell-works/blog) or
+contacting the contributors directly.

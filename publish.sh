@@ -13,6 +13,4 @@ rsync -a                          \
   --delete-excluded               \
   _site/                          \
   LICENSE                         \
-  css/                            \
-  images/                         \
   ../haskell-works.github.io/
