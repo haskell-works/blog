@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-./run-stack.sh build
+# ./run-stack.sh build
 
 stack exec site rebuild
 
