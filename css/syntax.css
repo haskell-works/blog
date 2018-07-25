@@ -1,0 +1,15 @@
+@import url("syntax-haskell-monokai.css");
+@import url("syntax-haskell-bash.css");
+
+div.sourceCode {
+  margin: 0;
+  padding-top: 0;
+  padding-bottom: 3px;
+  padding-left: 8px;
+  padding-right: 8px;
+  border: 0;
+  vertical-align: baseline;
+  border: none;
+  background: #272822;
+  overflow-x: auto;
+}
