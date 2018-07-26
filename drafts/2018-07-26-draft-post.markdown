@@ -11,8 +11,10 @@ big files.
 Such parsers both take use much memory and are too slow, being orders of
 magnitude slower than what IO bandwidth would allow.
 
-In some ways, the slowness is implied by the large memory usage. Traditional
-whole-document parsers spend a lot of time allocating memory, assigning
+In some sense, we can understand the slowness as a consequence large memory usage.
+All that memory access does not come for free time-wise.
+
+Traditional whole-document parsers spend a lot of time allocating memory, assigning
 pointers, following indirections and touching new memory that isn't cached
 in the CPU cache where it could have been accessed much more quickly.
 
