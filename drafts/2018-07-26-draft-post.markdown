@@ -3,7 +3,8 @@ title: Introduction to the succinct semi-index
 author: John Ky
 ---
 
-Last week we looked at traditional whole-document parsers struggle to parse
+[Last week](../posts/2018-07-25-problem-of-parsing-large-datasets.html) we
+looked at traditional whole-document parsers struggle to parse
 big files.
 
 <img style="float: right; height: 300px; width: 300px;" src="/images/golden-toilet.png">
@@ -87,7 +88,8 @@ select1 :: String -> Int -> Int
 select1 bs n = length (head (dropWhile ((< n) . popCount) (inits bs)))
 ```
 
-The first function `popCount1` is the **population** operation (sometimes called the hamming weight).
+The first function `popCount1` is the **population** operation (sometimes called the
+[hamming weight](https://en.wikipedia.org/wiki/Hamming_weight)).
 It tells us how many `1` bits there are in our bit string.
 
 ```haskell
