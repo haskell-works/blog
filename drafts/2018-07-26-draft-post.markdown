@@ -71,7 +71,7 @@ In order to query this bit string we will be using two very powerful
 query operations **rank** and **select**.
 
 The pseudocode for these to operations are provided below in Haskell which
-you can drop in to your Haskell repl to observe the behaviour of these two
+you can drop into your Haskell repl to observe the behaviour of these two
 operations:
 
 ```haskell
@@ -131,8 +131,8 @@ Here are some example **select** queries:
 19
 ```
 
-In less precise terms, the *rank* gives us how many `1s` up to a given position `n`
-in our bit string and and *select* gives us the position of the `n`th `1` in our
+In less precise terms, the **rank** gives us how many `1s` up to a given position `n`
+in our bit string and and **select** gives us the position of the `n`th `1` in our
 bit string.
 
 ```json
