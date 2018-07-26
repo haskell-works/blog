@@ -14,13 +14,13 @@ bandwidth would allow.
 In some ways, the slowness is implied by the large memory usage. Traditional
 whole-document parsers spend a lot of time allocating memory, assigning
 pointers, following indirections and touching new memory that isn't cached
-in the CPU cache where it can be accessed much more quickly.
+in the CPU cache where it could have been accessed much more quickly.
 
 To achieve high performance, the parser needs to do as little possible, but
 traditional parsers are actually creating a lot of work for the hardware,
 that is incidental to solving the problem of making the document data accessible
-and much of it is hidden from us as the developer by language and hardware
-abstractions.
+and much of it is hidden from us, the developer, by language and hardware
+abstractions, so the overhead is easy to miss.
 
 We have seen how the over-reliance on objects, and whilst they do the job,
 are severely expensive, especially when allocated en-mass.  For our use-case
@@ -28,7 +28,7 @@ their cost disproportionately exceeds their utility.
 
 # If not objects then what
 
-If you what to minimise memory usage, the first thing you should do is avoid
+If you want to minimise memory usage, the first thing you should do is avoid
 duplicating data.
 
 All the data we want to access is already in the document.
@@ -53,9 +53,9 @@ But if not objects, then what?
 
 If you want to find something extremely small and light weight, you could do
 worse than choose the humble bit.  It is 64 times smaller than a pointer
-and many more times smaller than an object.
+and many multiples of that smaller than an object.
 
-So let's do exactly that.
+So let's do exactly that: Let's use bits!
 
 # The rank-select bit string
 
