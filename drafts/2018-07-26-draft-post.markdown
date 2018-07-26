@@ -8,7 +8,7 @@ looked at traditional whole-document parsers struggle to parse
 big files.
 
 <img style="float: right; height: 300px; width: 300px;" src="/images/golden-toilet.png">
-Such parsers both take use much memory and are too slow, being orders of
+Such parsers both use much memory and are too slow, being orders of
 magnitude slower than what IO bandwidth would allow.
 
 In some sense, we can understand the slowness as a consequence large memory usage:
