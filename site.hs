@@ -25,6 +25,7 @@ main = hakyll $ do
   match "posts/*" $ do
     route $ setExtension "html"
     compile $ pandocCompiler
+      >>= saveSnapshot "post-content"
       >>= loadAndApplyTemplate "templates/post.html"    postCtx
       >>= loadAndApplyTemplate "templates/default.html" postCtx
       >>= relativizeUrls
@@ -80,9 +81,31 @@ main = hakyll $ do
 
   match "templates/*" $ compile templateBodyCompiler
 
+  -- http://jaspervdj.be/hakyll/tutorials/05-snapshots-feeds.html
+  let
+    rss name render' =
+      create [name] $ do
+        route idRoute
+        compile $ do
+          let feedCtx = postCtx `mappend` bodyField "description"
+          posts <- fmap (take 10) . recentFirst =<< loadAllSnapshots "posts/**" "post-content"
+          render' feedConfiguration feedCtx posts
+
+  rss "rss.xml" renderRss
+  rss "atom.xml" renderAtom
 
 --------------------------------------------------------------------------------
 postCtx :: Context String
 postCtx =
   dateField "date" "%B %e, %Y" `mappend`
   defaultContext
+
+feedConfiguration :: FeedConfiguration
+feedConfiguration =
+  FeedConfiguration {
+      feedTitle       = "Haskell Works Blog"
+    , feedDescription = ""
+    , feedAuthorName  = "Haskell Works"
+    , feedAuthorEmail = ""
+    , feedRoot        = "https://haskell-works.github.io"
+    }
