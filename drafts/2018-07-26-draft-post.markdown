@@ -11,7 +11,7 @@ big files.
 Such parsers both take use much memory and are too slow, being orders of
 magnitude slower than what IO bandwidth would allow.
 
-In some sense, we can understand the slowness as a consequence large memory usage.
+In some sense, we can understand the slowness as a consequence large memory usage:
 All that memory access does not come for free time-wise.
 
 Traditional whole-document parsers spend a lot of time allocating memory, assigning
