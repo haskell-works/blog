@@ -24,19 +24,16 @@ that is incidental to solving the problem of making the document data accessible
 and much of it is hidden from us, the developer, by language and hardware
 abstractions, so the overhead is easy to miss.
 
-We have seen how the over-reliance on objects, and whilst they do the job,
-are severely expensive, especially when allocated en-mass.  For our use-case
-their cost disproportionately exceeds their utility.
+We have seen how objects are severely expensive, especially when allocated
+en-mass.  For our use-case their cost disproportionately exceeds their utility.
 
 # If not objects then what
 
 If you want to minimise memory usage, the first thing you should do is avoid
 duplicating data.
 
-All the data we want to access is already in the document.
-
-Copying that data into intermediate objects so that we can work with them
-is wasteful.
+All the data we want to access is already in the document.  Copying that data
+into intermediate objects so that we can work with them is wasteful.
 
 <img style="float: right; height: 300px; width: 300px;" src="/images/bits-in-perspective.jpg">
 Instead we want to reuse the data in its original form as much as possible
@@ -83,10 +80,11 @@ popCount1 :: String -> Int
 popCount1 bs = length (filter (== '1') bs)
 
 rank1 :: String -> Int -> Int
-rank1 bs n = popCount (take n bs)
+rank1 bs n = popCount1 (take n bs)
 
 select1 :: String -> Int -> Int
-select1 bs n = length (head (dropWhile ((< n) . popCount) (inits bs)))
+select1 bs n = length (head (dropWhile ((< n) . popCount1) (inits (filter isBinary bs))))
+  where isBinary c = c == '0' || c == '1'
 ```
 
 The first function `popCount1` is the **population** operation (sometimes called the
@@ -138,6 +136,140 @@ In less precise terms, the **rank** gives us how many `1s` up to a given positio
 in our bit string and and **select** gives us the position of the `n`th `1` in our
 bit string.
 
+# Rank Select Bit String as a Semi-index
+
+We will now use the rank-select bit-string as a semi-index, which is to say we will
+use it to locate interesting locations in our JSON document.
+
+In our semi-index, every bit in the rank-select bit-string corresponds to a byte in
+the original document of the same position.  The value of each bit is chosen such
+that when the byte is the start of an interesting part of the document structurally
+it will be set to `1`, or `0` otherwise.
+
+For JSON, the beginning of every object (indicated by `{`), every array (indiciated by
+`[`), every field or value will be marked with a `1`.
+
 ```json
-{ "name": "John", "age": 30, "car": null }
+{ "name": "John", "age": 30, "car": null, colors: [1, 2, 3] }
+1010000000100000001000000100010000001000001000000011001001000
 ```
+
+What this gives us is the ability to locate the nth structurally important location
+in the document with **rank-select** operations.
+
+For example the 6th structurally important location marks the beginning of the
+field-name `"car"`:
+
+```haskell
+λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
+λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
+λ> let offset = select1 bs 6
+31
+λ> drop (offset - 1) text
+"\"car\": null, numbers: [1, 2, 3] }"
+```
+
+And the 9th structurally important location marks the beginning of the
+JSON array:
+
+```haskell
+λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
+λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
+λ> let offset = select1 bs 9
+52
+λ> drop (offset - 1) text
+"[1, 2, 3] }"
+```
+
+
+# Balanced Parenthesis Index
+
+The rank select bit string will allow us to jump to the relevant n-th node in
+the document, but it won't allow us to navigate the document as a tree because
+it doesn't capture the parent/sibling relationship of the nodes.
+
+This will require another kind of index called the balanced parenthesis index,
+which is capable of faithfully representing the structure of a tree.
+
+```json
+[{ "name": "John", "age": 30 }, { "name": "Kyle", "age": 31 }]
+```
+
+```text
+                             [ ]
+                              |
+               +--------- ----+---------------+
+               |                              |
+              { }                            { }
+               |                              |
+   +--------+--+----+-----+       +-------+---+----+-----+
+   |        |       |     |       |       |        |     |
+"name"   "John"   "age"   30   "name"   "Kyle"   "age"   31
+```
+
+```text
+                             ( )
+                              |
+               +--------- ----+---------------+
+               |                              |
+              ( )                            ( )
+               |                              |
+   +--------+--+----+-----+       +-------+---+----+-----+
+   |        |       |     |       |       |        |     |
+  ( )      ( )     ( )   ( )     ( )     ( )      ( )   ( )
+```
+
+```json
+[{ "name": "John", "age": 30 }, { "name": "Kyle", "age": 31 }]
+(( ()      ()      ()     () )  ( ()     ()       ()     () ))
+```
+
+```haskell
+λ> let fc = firstChild
+λ> let ns = nextSibling
+λ> let c = Cursor "((()()()())(()()()()))" 1
+λ> mapM_ printCursor $ ($ c) $ return
+((()()()())(()()()()))
+^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc
+((()()()())(()()()()))
+ ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc
+((()()()())(()()()()))
+  ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns
+((()()()())(()()()()))
+    ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns >=> ns
+((()()()())(()()()()))
+      ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns >=> ns >=> ns
+((()()()())(()()()()))
+        ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns
+((()()()())(()()()()))
+           ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc
+((()()()())(()()()()))
+            ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns
+((()()()())(()()()()))
+              ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns >=> ns
+((()()()())(()()()()))
+                ^
+λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns >=> ns >=> ns
+((()()()())(()()()()))
+                  ^
+```
+
+# Ingredients to making this fast
+
+* Fast way to build a Rank Select Bit String Index for a document
+* Fast way to build a Balanced Parentheses Index for a document
+* Fast rank/select operations
+* Fast firstChild/nextSibling operations
+* Fast value parsers
+
+Ideally, we'd like to build a parser made of these components, and be faster
+than a traditional whole document parser while using less memory.
