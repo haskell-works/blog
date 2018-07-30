@@ -22,14 +22,14 @@ To achieve high performance, the parser needs to do as little possible, but
 traditional parsers are actually creating a lot of work for the hardware,
 that is incidental to solving the problem of making the document data accessible
 and much of it is hidden from us, the developer, by language and hardware
-abstractions, so the overhead is easy to miss.
+abstractions, so the overhead is easy to overlook.
 
 We have seen how objects are severely expensive, especially when allocated
 en-mass.  For our use-case their cost disproportionately exceeds their utility.
 
 # If not objects then what
 
-If you want to minimise memory usage, the first thing you should do is avoid
+If we want to minimise memory usage, the first thing you should do is avoid
 duplicating data.
 
 All the data we want to access is already in the document.  Copying that data
@@ -97,7 +97,7 @@ It tells us how many `1` bits there are in our bit string.
 ```
 
 The second function `rank1` is the **rank** operation which tells us the population count of
-the prefix of our substring of the given length `n`.
+the length `n` prefix of our bit-string.
 
 Here are some example **rank** queries:
 
@@ -114,8 +114,7 @@ Here are some example **rank** queries:
 3
 ```
 
-The third function `select1` is the **select** operation which tells us smallest prefix of the given
-bit string that has the given population `n`.
+The third function `select1` is the **select** operation which tells us smallest prefix of the given bit string with the given population `n`.
 
 Here are some example **select** queries:
 
@@ -133,32 +132,36 @@ Here are some example **select** queries:
 ```
 
 In less precise terms, the **rank** gives us how many `1s` up to a given position `n`
-in our bit string and and **select** gives us the position of the `nᵗʰ` `1` in our
-bit string. どうしても
+in our bit string and **select** gives us the position of the `n`<sup>`th`</sup> `1` in our
+bit string.
 
 # Rank Select Bit String as a JSON Semi-index
 
 We will now use the rank-select bit-string as a semi-index, which is to say we will
-use it to locate interesting locations in our JSON document.
+use it to locate interesting locations in our JSON document that correspond to the
+beginning of JSON nodes.
 
 In our semi-index, every bit in the rank-select bit-string corresponds to a byte in
 the original document of the same position.  The value of each bit is chosen such
-that when the byte is the start of an interesting part of the document structurally
+that when the byte represents the start of a node in the document
 it will be set to `1`, or `0` otherwise.
 
 For JSON, the beginning of every object (indicated by `{`), every array (indiciated by
-`[`), every field or value will be marked with a `1`.
+`[`), every field or value will be marked with a `1`, and all other bytes are marked
+with a `0`.
+
+The example below demonstrates this mapping from bytes to bits:
 
 ```json
 { "name": "John", "age": 30, "car": null, colors: [1, 2, 3] }
 1010000000100000001000000100010000001000001000000011001001000
 ```
 
-What this gives us is the ability to locate the nᵗʰ structurally important location
+What this gives us is the ability to locate the `n`<sup>`th`</sup> structurally important location
 in the document with **rank-select** operations.
 
-For example the 6th structurally important location marks the beginning of the
-field-name `"car"`:
+For example the `6`<sup>`th`</sup> node is marked by the `6`<sup>`th`</sup> `1` bit
+at the location that corresponds to the field-name `"car"`:
 
 ```haskell
 λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
@@ -169,8 +172,8 @@ field-name `"car"`:
 "\"car\": null, numbers: [1, 2, 3] }"
 ```
 
-In another example, the 9th structurally important location marks the
-beginning of the JSON array:
+In another example, the `9`<sup>`th`</sup> node is marked by the `9`<sup>`th`</sup>
+`1` bit at the location that corresponds to the beginning of the JSON array:
 
 ```haskell
 λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
@@ -181,19 +184,22 @@ beginning of the JSON array:
 "[1, 2, 3] }"
 ```
 
-It's also worth noting that each successive `1` bit in the rank-select bit-string
-identifies nodes of the document according to pre-order traversal and that the
+You may notice that that each successive `1` bit in the rank-select bit-string
+identifies nodes of the document according to pre-order traversal.
+
+It is also worth noting that the
 rank-select bit-string in combination with the original text can be used to
-identify the type of the node in O(1) time, by testing the character pointed to
+identify the type of the node in `O(1)` time, by testing the character pointed to
 by the rank-select bit-string.
 
-For example, I know the 6ᵗʰ node in the document pre-order traversal is a
-string because the character at line `31` is a `"`, whilst the 9ᵗʰ node by
-pre-order traversal is an array because the character at line `52` is a `[`.]
+For example, we know the `6`<sup>`th`</sup> node in the document
+is a string because the character at line `31` is a `"`, whilst the `9`<sup>`th`</sup>
+node is an array because the character at line `52` is a `[`.
 
 # Rank Select Bit String as a CSV Semi-index
 
-Like-wise rank-select bit-strings can be as semi-index into a CSV document.
+Rank-select bit-strings can be used to index into a CSV document, in a similar
+fashion, but I have chosen to use two rank-select bit-strings instead of one.
 
 Take the following CSV document
 
@@ -204,7 +210,7 @@ Kyle,40,Data Scrubber
 ```
 
 I will represent this document on a single line for easier comparison with
-the rank the rank-select bit-strings:
+the rank the rank-select bit-strings and add the two rank-select bit-strings:
 
 ```text
 "name","age","profession"␤John,30,Code Monkey␤Kyle,40,Data Scrubber
@@ -212,33 +218,7 @@ the rank the rank-select bit-strings:
 0000000000000000000000000100000000000000000001000000000000000000000
 ```
 
-In this case, I've chosen to use two rank-select bit-strings, one to
-to mark both delimiters and newlines and the other to mark newlines
-only.
+The first rank-select bit-string marks both delimiters and newlines and
+helps us find the beginning of fields, whilst the other rank-select
+bit-string marks newlines only and helps us find the beginning of rows.
 
-What this gives us is the ability to locate the nᵗʰ structurally important location
-in the document with **rank-select** operations.
-
-For example the 6th structurally important location marks the beginning of the
-field-name `"car"`:
-
-```haskell
-λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
-λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
-λ> let offset = select1 bs 6
-31
-λ> drop (offset - 1) text
-"\"car\": null, numbers: [1, 2, 3] }"
-```
-
-And the 9ᵗʰ structurally important location marks the beginning of the
-JSON array:
-
-```haskell
-λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
-λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
-λ> let offset = select1 bs 9
-52
-λ> drop (offset - 1) text
-"[1, 2, 3] }"
-```
