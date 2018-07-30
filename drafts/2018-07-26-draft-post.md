@@ -133,10 +133,10 @@ Here are some example **select** queries:
 ```
 
 In less precise terms, the **rank** gives us how many `1s` up to a given position `n`
-in our bit string and and **select** gives us the position of the `n`th `1` in our
-bit string.
+in our bit string and and **select** gives us the position of the `nᵗʰ` `1` in our
+bit string. どうしても
 
-# Rank Select Bit String as a Semi-index
+# Rank Select Bit String as a JSON Semi-index
 
 We will now use the rank-select bit-string as a semi-index, which is to say we will
 use it to locate interesting locations in our JSON document.
@@ -154,7 +154,7 @@ For JSON, the beginning of every object (indicated by `{`), every array (indicia
 1010000000100000001000000100010000001000001000000011001001000
 ```
 
-What this gives us is the ability to locate the nth structurally important location
+What this gives us is the ability to locate the nᵗʰ structurally important location
 in the document with **rank-select** operations.
 
 For example the 6th structurally important location marks the beginning of the
@@ -169,8 +169,8 @@ field-name `"car"`:
 "\"car\": null, numbers: [1, 2, 3] }"
 ```
 
-And the 9th structurally important location marks the beginning of the
-JSON array:
+In another example, the 9th structurally important location marks the
+beginning of the JSON array:
 
 ```haskell
 λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
@@ -181,95 +181,64 @@ JSON array:
 "[1, 2, 3] }"
 ```
 
+It's also worth noting that each successive `1` bit in the rank-select bit-string
+identifies nodes of the document according to pre-order traversal and that the
+rank-select bit-string in combination with the original text can be used to
+identify the type of the node in O(1) time, by testing the character pointed to
+by the rank-select bit-string.
 
-# Balanced Parenthesis Index
+For example, I know the 6ᵗʰ node in the document pre-order traversal is a
+string because the character at line `31` is a `"`, whilst the 9ᵗʰ node by
+pre-order traversal is an array because the character at line `52` is a `[`.]
 
-The rank select bit string will allow us to jump to the relevant n-th node in
-the document, but it won't allow us to navigate the document as a tree because
-it doesn't capture the parent/sibling relationship of the nodes.
+# Rank Select Bit String as a CSV Semi-index
 
-This will require another kind of index called the balanced parenthesis index,
-which is capable of faithfully representing the structure of a tree.
+Like-wise rank-select bit-strings can be as semi-index into a CSV document.
 
-```json
-[{ "name": "John", "age": 30 }, { "name": "Kyle", "age": 31 }]
-```
-
-```text
-                             [ ]
-                              |
-               +--------- ----+---------------+
-               |                              |
-              { }                            { }
-               |                              |
-   +--------+--+----+-----+       +-------+---+----+-----+
-   |        |       |     |       |       |        |     |
-"name"   "John"   "age"   30   "name"   "Kyle"   "age"   31
-```
+Take the following CSV document
 
 ```text
-                             ( )
-                              |
-               +--------- ----+---------------+
-               |                              |
-              ( )                            ( )
-               |                              |
-   +--------+--+----+-----+       +-------+---+----+-----+
-   |        |       |     |       |       |        |     |
-  ( )      ( )     ( )   ( )     ( )     ( )      ( )   ( )
+"name","age","profession"
+John,30,Code Monkey
+Kyle,40,Data Scrubber
 ```
 
-```json
-[{ "name": "John", "age": 30 }, { "name": "Kyle", "age": 31 }]
-(( ()      ()      ()     () )  ( ()     ()       ()     () ))
+I will represent this document on a single line for easier comparison with
+the rank the rank-select bit-strings:
+
+```text
+"name","age","profession"␤John,30,Code Monkey␤Kyle,40,Data Scrubber
+0000001000001000000000000100001001000000000001000010010000000000000
+0000000000000000000000000100000000000000000001000000000000000000000
 ```
+
+In this case, I've chosen to use two rank-select bit-strings, one to
+to mark both delimiters and newlines and the other to mark newlines
+only.
+
+What this gives us is the ability to locate the nᵗʰ structurally important location
+in the document with **rank-select** operations.
+
+For example the 6th structurally important location marks the beginning of the
+field-name `"car"`:
 
 ```haskell
-λ> let fc = firstChild
-λ> let ns = nextSibling
-λ> let c = Cursor "((()()()())(()()()()))" 1
-λ> mapM_ printCursor $ ($ c) $ return
-((()()()())(()()()()))
-^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc
-((()()()())(()()()()))
- ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc
-((()()()())(()()()()))
-  ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns
-((()()()())(()()()()))
-    ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns >=> ns
-((()()()())(()()()()))
-      ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> fc >=> ns >=> ns >=> ns
-((()()()())(()()()()))
-        ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns
-((()()()())(()()()()))
-           ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc
-((()()()())(()()()()))
-            ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns
-((()()()())(()()()()))
-              ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns >=> ns
-((()()()())(()()()()))
-                ^
-λ> mapM_ printCursor $ ($ c) $ return >=> fc >=> ns >=> fc >=> ns >=> ns >=> ns
-((()()()())(()()()()))
-                  ^
+λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
+λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
+λ> let offset = select1 bs 6
+31
+λ> drop (offset - 1) text
+"\"car\": null, numbers: [1, 2, 3] }"
 ```
 
-# Ingredients to making this fast
+And the 9ᵗʰ structurally important location marks the beginning of the
+JSON array:
 
-* Fast way to build a Rank Select Bit String Index for a document
-* Fast way to build a Balanced Parentheses Index for a document
-* Fast rank/select operations
-* Fast firstChild/nextSibling operations
-* Fast value parsers
-
-Ideally, we'd like to build a parser made of these components, and be faster
-than a traditional whole document parser while using less memory.
+```haskell
+λ> let text = "{ \"name\": \"John\", \"age\": 30, \"car\": null, numbers: [1, 2, 3] }"
+λ> let bs   = "101 00000 001 00000 0010 00000 10001000 00010 000010000000011001001000"
+λ> let offset = select1 bs 9
+52
+λ> drop (offset - 1) text
+"[1, 2, 3] }"
+```
