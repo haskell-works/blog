@@ -4,15 +4,15 @@ author: John Ky
 ---
 
 [Last week](../posts/2018-07-25-problem-of-parsing-large-datasets.html) we
-looked at traditional whole-document parsers struggle to parse
+looked at how traditional whole-document parsers struggle to parse
 big files.
 
 <img style="float: right; height: 300px; width: 300px;" src="/images/golden-toilet.png">
-Such parsers both use much memory and are too slow, being orders of
+Such parsers both too use much memory and are too slow, being orders of
 magnitude slower than what IO bandwidth would allow.
 
 In some sense, we can understand the slowness as a consequence large memory usage:
-All that memory access does not come for free time-wise.
+All that memory access does not come for free.
 
 Traditional whole-document parsers spend a lot of time allocating memory, assigning
 pointers, following indirections and touching new memory that isn't cached
@@ -21,8 +21,8 @@ in the CPU cache where it could have been accessed much more quickly.
 To achieve high performance, the parser needs to do as little possible, but
 traditional parsers are actually creating a lot of work for the hardware,
 that is incidental to solving the problem of making the document data accessible
-and much of it is hidden from us, the developer, by language and hardware
-abstractions, so the overhead is easy to overlook.
+and much of that overhead is hidden from us, the developer, by language and
+hardware abstractions, so the overhead is easy to overlook.
 
 We have seen how objects are severely expensive, especially when allocated
 en-mass.  For our use-case their cost disproportionately exceeds their utility.
@@ -56,7 +56,7 @@ and many multiples of that smaller than an object.
 
 So let's do exactly that: Let's use bits!
 
-# The rank-select bit string
+# The rank-select bit-string
 
 Before we can pull this off we are going to have to learn us some concepts.
 
@@ -66,12 +66,11 @@ Imagine a string of bits.  Not unlike the following:
 let bs = "101000000010000000100000010001000000100000"
 ```
 
-In order to query this bit string we will be using two very powerful
+In order to query this bit-string we will be using two very powerful
 query operations **rank** and **select**.
 
 The pseudocode for these to operations are provided below in Haskell which
-you can drop into your Haskell repl to observe the behaviour of these two
-operations:
+you can drop into your Haskell repl to observe their behaviours:
 
 ```haskell
 import Data.List
@@ -89,7 +88,7 @@ select1 bs n = length (head (dropWhile ((< n) . popCount1) (inits (filter isBina
 
 The first function `popCount1` is the **population** operation (sometimes called the
 [hamming weight](https://en.wikipedia.org/wiki/Hamming_weight)).
-It tells us how many `1` bits there are in our bit string.
+It tells us how many `1` bits there are in our bit-string.
 
 ```haskell
 λ> popCount1 bs
@@ -114,7 +113,7 @@ Here are some example **rank** queries:
 3
 ```
 
-The third function `select1` is the **select** operation which tells us smallest prefix of the given bit string with the given population `n`.
+The third function `select1` is the **select** operation which tells us smallest prefix of the given bit-string with the given population `n`.
 
 Here are some example **select** queries:
 
@@ -132,19 +131,19 @@ Here are some example **select** queries:
 ```
 
 In less precise terms, the **rank** gives us how many `1s` up to a given position `n`
-in our bit string and **select** gives us the position of the `n`<sup>`th`</sup> `1` in our
-bit string.
+in our bit-string and **select** gives us the position of the `n`<sup>`th`</sup> `1` in our
+bit-string.
 
-# Rank Select Bit String as a JSON Semi-index
+# Rank-Select Bit-String as an index into JSON
 
-We will now use the rank-select bit-string as a semi-index, which is to say we will
+We will now use the rank-select bit-string to index into JSON, which is to say we will
 use it to locate interesting locations in our JSON document that correspond to the
 beginning of JSON nodes.
 
 In our semi-index, every bit in the rank-select bit-string corresponds to a byte in
 the original document of the same position.  The value of each bit is chosen such
 that when the byte represents the start of a node in the document
-it will be set to `1`, or `0` otherwise.
+it will be set to `1`.  Otherwise it will be set to `0`.
 
 For JSON, the beginning of every object (indicated by `{`), every array (indiciated by
 `[`), every field or value will be marked with a `1`, and all other bytes are marked
@@ -157,7 +156,7 @@ The example below demonstrates this mapping from bytes to bits:
 1010000000100000001000000100010000001000001000000011001001000
 ```
 
-What this gives us is the ability to locate the `n`<sup>`th`</sup> structurally important location
+What this gives us is the ability to locate the `n`<sup>`th`</sup> node
 in the document with **rank-select** operations.
 
 For example the `6`<sup>`th`</sup> node is marked by the `6`<sup>`th`</sup> `1` bit
@@ -184,7 +183,7 @@ In another example, the `9`<sup>`th`</sup> node is marked by the `9`<sup>`th`</s
 "[1, 2, 3] }"
 ```
 
-You may notice that that each successive `1` bit in the rank-select bit-string
+You may notice that each successive `1` bit in the rank-select bit-string
 identifies nodes of the document according to pre-order traversal.
 
 It is also worth noting that the
@@ -196,9 +195,9 @@ For example, we know the `6`<sup>`th`</sup> node in the document
 is a string because the character at line `31` is a `"`, whilst the `9`<sup>`th`</sup>
 node is an array because the character at line `52` is a `[`.
 
-# Rank Select Bit String as a CSV Semi-index
+# Rank-Select Bit-String as an index into CSV
 
-Rank-select bit-strings can be used to index into a CSV document, in a similar
+Rank-select bit-strings can be used to index into a CSV document in a similar
 fashion, but I have chosen to use two rank-select bit-strings instead of one.
 
 Take the following CSV document
@@ -210,7 +209,7 @@ Kyle,40,Data Scrubber
 ```
 
 I will represent this document on a single line for easier comparison with
-the rank the rank-select bit-strings and add the two rank-select bit-strings:
+the two rank-select bit-strings that follow:
 
 ```text
 "name","age","profession"␤John,30,Code Monkey␤Kyle,40,Data Scrubber
@@ -223,7 +222,7 @@ helps us find the beginning of fields, whilst the other rank-select
 bit-string marks newlines only and helps us find the beginning of rows.
 
 Having two rank-select bit-strings affords us operations like row
-count, and field count (per document or per row) without having to
+count, and field count (either per document or per row) without having to
 inspect the original document text at all.
 
 # Other ingredients to a fast JSON or CSV parser
@@ -236,7 +235,7 @@ short and very long bit-strings to make this practical.
 We haven't talked about the implications this has for whole document or
 streaming parsers either.
 
-Nor have we discussed how to build rank-select bit-strings and then
+Nor have we discussed how to build rank-select bit-strings efficiently and then
 use them to parse the document in a way that is competitive with
 traditional parsers.
 
@@ -245,7 +244,8 @@ heirarchical document formats such as JSON because it does not allow
 for tree traversal.
 
 Whilst we know the nodes are ordered in pre-order traversal order,
-we have lost information parent-child or sibling-sibling relationships,
+we have lost information about parent-child or sibling-sibling relationships
+between nodes,
 and so are unable traverse in such a way as to, for example, construct
 a tree of nodes that resemble the document.
 
