@@ -245,9 +245,11 @@ for tree traversal.
 
 Whilst we know the nodes are ordered in pre-order traversal order,
 we have lost information about parent-child or sibling-sibling relationships
-between nodes,
-and so are unable traverse in such a way as to, for example, construct
-a tree of nodes that resemble the document.
+between nodes, and so are unable traverse in such a way as to, for example,
+construct a tree of nodes that resemble the document.
+
+An additional index is required to make proper tree-traversal of the
+document possible.
 
 Alas, these and other questions must remain for a future post.
 
