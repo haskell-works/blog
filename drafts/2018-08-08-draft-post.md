@@ -229,7 +229,7 @@ inspect the original document text at all.
 
 A rank-select bit-string by itself won't get us a fast JSON or CSV parser.
 
-We will high performance **rank** and **select** operations for both
+We will need high performance **rank** and **select** operations for both
 short and very long bit-strings to make this practical.
 
 We haven't talked about the implications this has for whole document or
@@ -250,3 +250,6 @@ and so are unable traverse in such a way as to, for example, construct
 a tree of nodes that resemble the document.
 
 Alas, these and other questions must remain for a future post.
+
+# References
+[Semi-Indexing Semi-Structured Data in Tiny Space](http://www.di.unipi.it/~ottavian/files/semi_index_cikm.pdf)
