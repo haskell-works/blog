@@ -222,3 +222,31 @@ The first rank-select bit-string marks both delimiters and newlines and
 helps us find the beginning of fields, whilst the other rank-select
 bit-string marks newlines only and helps us find the beginning of rows.
 
+Having two rank-select bit-strings affords us operations like row
+count, and field count (per document or per row) without having to
+inspect the original document text at all.
+
+# Other ingredients to a fast JSON or CSV parser
+
+A rank-select bit-string by itself won't get us a fast JSON or CSV parser.
+
+We will high performance **rank** and **select** operations for both
+short and very long bit-strings to make this practical.
+
+We haven't talked about the implications this has for whole document or
+streaming parsers either.
+
+Nor have we discussed how to build rank-select bit-strings and then
+use them to parse the document in a way that is competitive with
+traditional parsers.
+
+Furthermore, the rank-select bit-string is insufficient for parsing
+heirarchical document formats such as JSON because it does not allow
+for tree traversal.
+
+Whilst we know the nodes are ordered in pre-order traversal order,
+we have lost information parent-child or sibling-sibling relationships,
+and so are unable traverse in such a way as to, for example, construct
+a tree of nodes that resemble the document.
+
+Alas, these and other questions must remain for a future post.
