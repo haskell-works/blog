@@ -1,5 +1,5 @@
 ---
-title: Introduction to the succinct semi-index
+title: Introduction to the rank-select bit-string
 author: John Ky
 ---
 
