@@ -225,6 +225,12 @@ Having two rank-select bit-strings affords us operations like row
 count, and field count (either per document or per row) without having to
 inspect the original document text at all.
 
+If you're interested with playing with the haskell-works library which
+works on real bit-vectors (rather than emulation on strings), head
+over to the
+[hw-rankselect-base](http://github.com/haskell-works/hw-rankselect-base)
+project page.
+
 # Other ingredients to a fast JSON or CSV parser
 
 A rank-select bit-string by itself won't get us a fast JSON or CSV parser.
