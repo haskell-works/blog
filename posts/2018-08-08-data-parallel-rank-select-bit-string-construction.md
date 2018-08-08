@@ -67,7 +67,7 @@ uses large registers (in our case 64-bit integer registers) as small
 parallel computers that can process several pieces of information at a
 time.
 
-We will be using this technique to parse out text 8-bytes at a time.
+We will be using this technique to parse our text 8-bytes at a time.
 
 Before we start we will need the following operations:
 
@@ -76,8 +76,8 @@ Before we start we will need the following operations:
 (.|.) :: Word64 -> Word64 -> Word64 -- Compute the bit-wise OR of two integers
 (.^.) :: Word64 -> Word64 -> Word64 -- Compute the bit-wise XOR of two integers
 comp  :: Word64 -> Word64           -- Compute the bit-wise complement of an integer
-(.<.) :: Word64 -> Count -> Word64  -- Compute the left shift of an integer by the given offset in Big-Endian
-                                    -- Note, this is equivalent to a right shift of an integer in Little-Endian
+(.>.) :: Word64 -> Count -> Word64  -- Compute the right shift of an integer by the given offset in Big-Endian
+                                    -- Note, this is equivalent to a left shift of an integer in Little-Endian
 ```
 
 These operators are pretty standard, but pay close attention to the shift
@@ -155,7 +155,7 @@ every non-zero byte into a `0` bit and every zero byte to a `1` bit.
 
 The problem we are trying to solve can be exemplified by the following
 example where we need a function `cmpzero` that condenses the bytes in
-`comparison` row to the bits in the `newlines` row:
+the `comparison` row to the bits in the `newlines` row:
 
 ```text
               ┌──┐
@@ -164,14 +164,14 @@ example where we need a function `cmpzero` that condenses the bytes in
               └──┘
 ```
 
-The can be done in a series of bit-wise manipulations described below:
+This can be done in a series of bit-wise manipulations described below:
 
 ```text
 T   text ┌─── 10100110 00100110 10000110 11110110 11001110 00000000 10000010 11001110
          │                                                                           
     mask │┌── 00001111 00001111 00001111 00001111 00001111 00001111 00001111 00001111
 A   (.&.)├┴─> 00000110 00000110 00000110 00000110 00001110 00000000 00000010 00001110 ─┐    
-B        │  ┌ 01100000 01100000 01100000 01100000 11100000 00000000 00100000 11100000 <┘ (.<. 4)
+B        │  ┌ 01100000 01100000 01100000 01100000 11100000 00000000 00100000 11100000 <┘ (.>. 4)
          │  └────────────────────────────────────────────────────────────────────────────┐
     mask │┌── 11110000 11110000 11110000 11110000 11110000 11110000 11110000 11110000    │
 C   (.&.)└┴─> 10100000 00100000 10000000 11110000 11000000 00000000 10000000 11000000 ──┐│
@@ -180,7 +180,7 @@ D        ┌─── 11100000 01100000 11100000 11110000 11100000 00000000 1010
          │                                                                             
     mask │┌── 00110000 00110000 00110000 00110000 00110000 00110000 00110000 00110000 mask 
 E   (.&.)├┴─> 00100000 00100000 00100000 00110000 00100000 00000000 00100000 00100000 ─┐    
-F        │  ┌ 10000000 10000000 10000000 11000000 10000000 00000000 10000000 10000000 <┘ (.<. 2)
+F        │  ┌ 10000000 10000000 10000000 11000000 10000000 00000000 10000000 10000000 <┘ (.>. 2)
          │  └────────────────────────────────────────────────────────────────────────────┐
 G   mask │┌── 11000000 11000000 11000000 11000000 11000000 11000000 11000000 11000000    │
     (.&.)└┴─> 11000000 01000000 11000000 11000000 11000000 00000000 10000000 11000000 ──┐│
@@ -189,7 +189,7 @@ H        ┌─── 11000000 11000000 11000000 11000000 11000000 00000000 1000
          │                                                                            
     mask │┌── 01000000 01000000 01000000 01000000 01000000 00000000 01000000 01000000 
 I   (.&.)├┴─> 01000000 01000000 01000000 01000000 01000000 00000000 01000000 01000000 ─┐    
-J        │  ┌ 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <┘ (.<. 1)
+J        │  ┌ 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <┘ (.>. 1)
          │  └────────────────────────────────────────────────────────────────────────────┐
     mask │┌── 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000    │
 K   (.&.)└┴─> 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 ──┐│
