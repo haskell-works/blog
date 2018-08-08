@@ -66,6 +66,8 @@ uses large registers (in our case 64-bit integer registers) as small
 parallel computers that can process several pieces of information at a
 time.
 
+We will be using this technique to parse out text 8-bytes at a time.
+
 Before we start we will need the following operations:
 
 ```haskell
