@@ -266,7 +266,8 @@ we only use the least significant bit from each of the 8 bytes in our word and d
 care what the values of the other bits are.
 
 We can exploit this fact to remove some of the operations from our computation by marking
-those bits as don't care or `x` and then figuring out which operations we can omit.
+those bits as don't care or `x`, and tracing those bits backwards through the computation
+and then figuring out which operations we can omit.
 
 ```text
 T   text ┌─── 10100110 00100110 10000110 11110110 11001110 00000000 10000010 11001110
