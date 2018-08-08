@@ -15,7 +15,7 @@ in the parsing of a CSV-like format.
 Doing so allows us to parse the text 8-bytes at a time instead of one
 byte at a time as a traditional parser would.
 
-For simplicity, I will will be postponing the particular challenges of
+For simplicity, I will be postponing the particular challenges of
 implementing the particulars of the
 [RFC standard for CSV](https://tools.ietf.org/html/rfc4180) for a later
 time and instead work with a simplified format.
