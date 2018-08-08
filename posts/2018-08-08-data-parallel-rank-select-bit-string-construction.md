@@ -326,9 +326,8 @@ The optimisations meas we now use only these operations:
 * `load` x 1
 * `store` x 1
 
-This adds up to `7` very fast register only instructions plus `2` implied memory instructions.
-
-Which is very close to `1` instruction per byte.
+This adds up to `7` very fast register only instructions plus `2` implied memory instructions,
+which is very close to `1` instruction per byte.
 
 ## Unanswered questions
 
