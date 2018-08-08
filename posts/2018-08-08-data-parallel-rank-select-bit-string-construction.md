@@ -8,11 +8,12 @@ about the problems with traditional parser and offered a
 glimpse of how they might be solved, but succinct data structures are quite
 alien and it isn't obvious the pay-off will be worthwhile.
 
-In this post, I will motivate the use of rank-select bit-strings for CSV
-by employing
-[data-level parallelism](https://en.wikipedia.org/wiki/Data_parallelism)
-techniques to reason about the potential the performance benefits of succinct
-data-structures based parsers over traditional parsers.
+In this post, I demonstrate how use broadword programming techniques to
+exploit [data-level parallelism](https://en.wikipedia.org/wiki/Data_parallelism)
+in the parsing of a CSV-like format.
+
+Doing so allows us to parse the text 8-bytes at a time instead of one
+byte at a time as a traditional parser would.
 
 For simplicity, I will will be postponing the particular challenges of
 implementing the particulars of the
