@@ -83,13 +83,12 @@ comp  :: Word64 -> Word64           -- Compute the bit-wise complement of an int
 These operators are pretty standard, but pay close attention to the shift
 operator, which is the standard left shift operator.
 
-When the bits are laid out in Little-Endian order the left shift will
-actually shift all the bits *to the RIGHT*.
+When the bits are laid out in Little-Endian order the right shift operator will
+actually shift all the bits *to the LEFT*.
 
-In all of the diagrams, bits and bytes will be laid out
-in Little-Endian because it is the natural layout
-for succinct data structures but it can be very confusing so bear with me
-and keep this in mind.
+In all of the diagrams, bits and bytes will be laid out in Little-Endian
+because it is the natural layout for succinct data structures but it can
+be very confusing so bear with me and keep this in mind.
 
 Our first task is to build the following rank-select bit-string from
 our text.
