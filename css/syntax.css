@@ -1,6 +1,7 @@
 @import url("syntax-haskell-monokai.css");
-@import url("syntax-haskell-bash.css");
-@import url("syntax-haskell-json.css");
+@import url("syntax-bash.css");
+@import url("syntax-json.css");
+@import url("syntax-text.css");
 
 div.sourceCode {
   margin: 0;

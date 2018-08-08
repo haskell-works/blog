@@ -73,26 +73,34 @@ let wNewlines = 0x0101010101010101L * 0x0a = 0x0a0a0a0a0a0a0a0aL
 The following is Little-Endian representation of 64-bit words.
 
 ```text
-" n a m e " , "  a g e " , " p r  o f e s s i o n  " ␤ J o h n , 3 
-226e616d65222c22 616765222c227072 6f66657373696f6e 220a4a6f686e2c33
-0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a
-28646b676f282628 6b6d6f2826287a78 656c6f7979636564 2800406562642639
-0 0 0 0 0 0 0 0  0 0 0 0 0 0 0 0  0 0 0 0 0 0 0 0  0 1 0 0 0 0 0 0 
-                                                     ^^
-
-0 , C o d e   M  o n k e y ␤ K y  l e , 4 0 , D a  t a   S c r u b 
-302c436f6465204d 6f6e6b65790a4b79 6c652c34302c4461 7461205363727562
-0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a 0a0a0a0a0a0a0a0a
-3a2649656e6f2a47 6564616f73004173 666f263e3a264e6b 7e6b2a5969787f68
-0 0 0 0 0 0 0 0  0 0 0 0 0 1 0 0  0 0 0 0 0 0 0 0  0 0 0 0 0 0 0 0 
-                           ^^
-
-b e r ␤
-6265720a00000000
-0a0a0a0a0a0a0a0a
-686f78000a0a0a0a
-0 0 0 1 0 0 0 0 
-      ^^
+               Bytes packed into Little-Endian Word64 integers
+             ┌─────────────────────────┼─────────────────────────┐
+  ┌──────────┴──────────┐   ┌──────────┴──────────┐   ┌──────────┴──────────┐
+  "  n  a  m  e  "  ,  "    a  g  e  "  ,  "  p  r    o  f  e  s  s  i  o  n   
+  22 6e 61 6d 65 22 2c 22   61 67 65 22 2c 22 70 72   6f 66 65 73 73 69 6f 6e   text ─────────┐
+  0a 0a 0a 0a 0a 0a 0a 0a   0a 0a 0a 0a 0a 0a 0a 0a   0a 0a 0a 0a 0a 0a 0a 0a   mask ─────────┤
+  28 64 6b 67 6f 28 26 28   6b 6d 6f 28 26 28 7a 78   65 6c 6f 79 79 63 65 64   comparison <┬─┘ xor
+  0  0  0  0  0  0  0  0    0  0  0  0  0  0  0  0    0  0  0  0  0  0  0  0    newlines   <┘ cmpzero
+                                                                              
+                                                                              
+    ┌──┐                                                            ┌──┐                        
+  " │$ │J  o  h  n  ,  3    0  ,  C  o  d  e     M    o  n  k  e  y │␤ │K  y 
+  22│0a│4a 6f 68 6e 2c 33   30 2c 43 6f 64 65 20 4d   6f 6e 6b 65 79│0a│4b 79   text ─────────┐
+  0a│0a│0a 0a 0a 0a 0a 0a   0a 0a 0a 0a 0a 0a 0a 0a   0a 0a 0a 0a 0a│0a│0a 0a   mask ─────────┤
+  28│00│40 65 62 64 26 39   3a 26 49 65 6e 6f 2a 47   65 64 61 6f 73│00│41 73   comparison <┬─┘ xor
+  0 │1 │0  0  0  0  0  0    0  0  0  0  0  0  0  0    0  0  0  0  0 │1 │0  0    newlines   <┘ cmpzero
+    └┬─┘                                                            └┬─┘  
+     └──────────────────────────────────────────────┬────────────────┘
+                                                    │                            
+                                                    │         ┌──┐               
+  l  e  ,  4  0  ,  D  a    t  a     S  c  r  u  b  │ b  e  r │␤ ├───────────┐   
+  6c 65 2c 34 30 2c 44 61   74 61 20 53 63 72 75 62 │ 62 65 72│0a│00 00 00 00│  text ─────────┐
+  0a 0a 0a 0a 0a 0a 0a 0a   0a 0a 0a 0a 0a 0a 0a 0a │ 0a 0a 0a│0a│0a 0a 0a 0a│  mask ─────────┤
+  66 6f 26 3e 3a 26 4e 6b   7e 6b 2a 59 69 78 7f 68 │ 68 6f 78│00│0a 0a 0a 0a│  comparison <┬─┘ xor
+  0  0  0  0  0  0  0  0    0  0  0  0  0  0  0  0  │ 0  0  0 │1 │0  0  0  0 │  newlines   <┘ cmpzero
+                                                    │         └┬─┴───┬───────┘  
+              Bits corresponding to newlines that   │          │     └─Padding
+              need to be set to 1 ──────────────────┴──────────┘
 ```
 
 We then take our input text, pad it with zero bytes until the next
@@ -100,16 +108,4 @@ We then take our input text, pad it with zero bytes until the next
 
 We can then do our byte-by-byte comparisons 8-bytes at a time by
 computing the XOR of every element against our `wNewlines` value.
-
-The technique I will use is
-
-can be used to build rank-select bit-string indexes for to implement a
-higher performance version of `cut`.
-
-I chose `cut` because the `cut` grammar has no concept of quoting and
-so 
-
- unlocks
-a technique called instruction parallelism, which allows us to process
-multiple bytes in parallel
 
