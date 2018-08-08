@@ -241,9 +241,9 @@ The resulting code is show below.
 ```haskell
 testWord8s :: Word64 -> Word64
 testWord8s w =  let w8s = w
-                    w4s = (w8s .&. 0x0f0f0f0f0f0f0f0f) .|. (w8s .&. 0xf0f0f0f0f0f0f0f0 .>. 4)
-                    w2s = (w4s .&. 0x0707070707070707) .|. (w4s .&. 0x7070707070707070 .>. 2)
-                    w1s = (w2s .&. 0x0303030303030303) .|. (w2s .&. 0x3030303030303030 .>. 1)
+                    w4s = (w8s .&. 0x0f0f0f0f0f0f0f0f) .|. ((w8s .&. 0xf0f0f0f0f0f0f0f0) .>. 4)
+                    w2s = (w4s .&. 0x0707070707070707) .|. ((w4s .&. 0x7070707070707070) .>. 2)
+                    w1s = (w2s .&. 0x0303030303030303) .|. ((w2s .&. 0x3030303030303030) .>. 1)
                 in  pext w1s 0x0101010101010101
 {-# INLINE testWord8s #-}
 ```
