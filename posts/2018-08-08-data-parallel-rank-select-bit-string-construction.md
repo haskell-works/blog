@@ -236,6 +236,31 @@ The other rank-select bit-string which marks delimiters and newlines can be deri
 same algorithm for the delimiters and the newlines separately then taking the bitwise OR `(.|.)` of
 the two resulting bit-strings.
 
+## Source code
+You can play with the source code here:
+
+https://github.com/haskell-works/hw-simd/blob/master/src/HaskellWorks/Data/Simd/Internal/Bits.hs#L9
+
+```haskell
+testWord8s :: Word64 -> Word64
+testWord8s w =  let w8s = w
+                    w4s = w8s .|. (w8s .>. 4)
+                    w2s = w4s .|. (w4s .>. 2)
+                    w1s = w2s .|. (w2s .>. 1)
+                in  pext w1s 0x0101010101010101
+{-# INLINE testWord8s #-}
+```
+
+The astute reader will notice that I have not used the AND operation `(.&.)` in my implementation,
+as per the algorithm described in the previous section, but it still works.
+
+Why?
+
+It is because if I fail to mask out the bits, at worst I will "dirty" the bits I will never extract
+into my rank-select bit-string so the outcome is not affected.
+
+This saves me from having to do 6 AND `(.&.)` operations.
+
 ## Unanswered questions
 
 All up this seems like a lot of work, but what's nice about it is that we are parsing 8-bytes at a time
@@ -245,7 +270,7 @@ the iteration down.
 Nevertheless, some benchmarks will be necessary to compare this approach to one that parses a byte at
 a time.
 
-The astute reader will also notice that I have used the `pext` operation without describing how it
+You may have noticed that I have used the `pext` operation without describing how it
 works nor explained why that operation should be fast.
 
 I will follow up in a future post to explain the `pext` operation in detail and offer some benchmarks
