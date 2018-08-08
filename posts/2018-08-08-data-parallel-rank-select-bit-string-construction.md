@@ -261,7 +261,7 @@ Which adds up to `13` very fast register only instructions plus `2` implied memo
 
 # Optimising our bit-string construction code
 
-If you look at the `L` row in the diagram you will notice that near the end of the computation
+If you look at the `M` row in the diagram you will notice that near the end of the computation
 we only use the least significant bit from each of the 8 bytes in our word and don't actually
 care what the values of the other bits are.
 
