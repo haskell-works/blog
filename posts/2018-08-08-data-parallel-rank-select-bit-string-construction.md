@@ -182,18 +182,18 @@ E   (.&.)├┴─> 00100000 00100000 00100000 00110000 00100000 00000000 001000
 F        │  ┌ 10000000 10000000 10000000 11000000 10000000 00000000 10000000 10000000 <┘ (.>. 2)
          │  └────────────────────────────────────────────────────────────────────────────┐
 G   mask │┌── 11000000 11000000 11000000 11000000 11000000 11000000 11000000 11000000    │
-    (.&.)└┴─> 11000000 01000000 11000000 11000000 11000000 00000000 10000000 11000000 ──┐│
+H   (.&.)└┴─> 11000000 01000000 11000000 11000000 11000000 00000000 10000000 11000000 ──┐│
                                                                                         ││
-H        ┌─── 11000000 11000000 11000000 11000000 11000000 00000000 10000000 11000000 <─┴┘(.|.)
+I        ┌─── 11000000 11000000 11000000 11000000 11000000 00000000 10000000 11000000 <─┴┘(.|.)
          │                                                                            
     mask │┌── 01000000 01000000 01000000 01000000 01000000 00000000 01000000 01000000 
-I   (.&.)├┴─> 01000000 01000000 01000000 01000000 01000000 00000000 01000000 01000000 ─┐    
-J        │  ┌ 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <┘ (.>. 1)
+J   (.&.)├┴─> 01000000 01000000 01000000 01000000 01000000 00000000 01000000 01000000 ─┐    
+K        │  ┌ 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <┘ (.>. 1)
          │  └────────────────────────────────────────────────────────────────────────────┐
     mask │┌── 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000    │
-K   (.&.)└┴─> 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 ──┐│
+L   (.&.)└┴─> 10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 ──┐│
                                                                                         ││
-L             10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <─┴┘(.|.)
+M             10000000 10000000 10000000 10000000 10000000 00000000 10000000 10000000 <─┴┘(.|.)
               │        │        │        └───┐┌───┘        │        │        │
               │        │        └───────────┐││┌───────────┘        │        │
               │        └───────────────────┐││││┌───────────────────┘        │
@@ -215,16 +215,16 @@ compress further to the first quarter of our bytes similarly:
 
 * At `E` we mask out first quarter of every byte in our word `D`.
 * At `F` we shift the second quarter of every byte into the first quarter of every byte in our word.
-* At `G` we mask out the second quarter of every byte in our word `D`.
-* At `H` we compute `E .|. G`
+* At `H` we mask out the second quarter of every byte in our word `D`.
+* At `I` we compute `F .|. H`
 
 Finally we do this one more time to compress the first quarter of every byte in our word to the first
 bit of every byte in our word.
 
-* At `I` we mask out first bit of every byte in our word `H`.
-* At `J` we shift the second bit of every byte into the first bit of every byte in our word.
-* At `K` we mask out the second bit of every byte in our word `H`.
-* At `L` we compute `I .|. K`
+* At `J` we mask out first bit of every byte in our word `H`.
+* At `K` we shift the second bit of every byte into the first bit of every byte in our word.
+* At `L` we mask out the second bit of every byte in our word `H`.
+* At `M` we compute `J .|. L`
 
 Now we are two steps away from the 8-bits of rank-select bit-string we need for our 8 input characters.
 
@@ -236,10 +236,77 @@ The other rank-select bit-string which marks delimiters and newlines can be deri
 same algorithm for the delimiters and the newlines separately then taking the bitwise OR `(.|.)` of
 the two resulting bit-strings.
 
-## Source code
-You can play with the source code here:
+The resulting code is show below.
 
-https://github.com/haskell-works/hw-simd/blob/master/src/HaskellWorks/Data/Simd/Internal/Bits.hs#L9
+```haskell
+testWord8s :: Word64 -> Word64
+testWord8s w =  let w8s = w
+                    w4s = (w8s .&. 0x0f0f0f0f0f0f0f0f) .|. (w8s .&. 0xf0f0f0f0f0f0f0f0 .>. 4)
+                    w2s = (w4s .&. 0x0707070707070707) .|. (w4s .&. 0x7070707070707070 .>. 2)
+                    w1s = (w2s .&. 0x0303030303030303) .|. (w2s .&. 0x3030303030303030 .>. 1)
+                in  pext w1s 0x0101010101010101
+{-# INLINE testWord8s #-}
+```
+
+All up we've used the following operations:
+
+* `(.&.)` x 6
+* `(.|.)` x 3
+* `(.>.)` x 3
+* `pext` x 1
+* `load` x 1
+* `store` x 1
+
+Which adds up to `13` very fast register only instructions plus `2` implied memory instructions.
+
+# Optimising our bit-string construction code
+
+If you look at the `L` row in the diagram you will notice that near the end of the computation
+we only use the least significant bit from each of the 8 bytes in our word and don't actually
+care what the values of the other bits are.
+
+We can exploit this fact to remove some of the operations from our computation by marking
+those bits as don't care or `x` and then figuring out which operations we can omit.
+
+```text
+T   text ┌─── 10100110 00100110 10000110 11110110 11001110 00000000 10000010 11001110
+         │                                                                           
+A   noop ├──> xxxx0110 xxxx0110 xxxx0110 xxxx0110 xxxx1110 xxxx0000 xxxx0010 xxxx1110 ─┐    
+B        │  ┌ 0110xxxx 0110xxxx 0110xxxx 0110xxxx 1110xxxx 0000xxxx 0010xxxx 1110xxxx <┘ (.>. 4)
+         │  └────────────────────────────────────────────────────────────────────────────┐
+C   noop └──> 1010xxxx 0010xxxx 1000xxxx 1111xxxx 1100xxxx 0000xxxx 1000xxxx 1100xxxx ──┐│
+                                                                                        ││
+D        ┌─── 1110xxxx 0110xxxx 1110xxxx 1111xxxx 1110xxxx 0000xxxx 1010xxxx 1110xxxx <─┴┘(.|.)
+         │                                                                             
+E   noop ├──> xx10xxxx xx10xxxx xx10xxxx xx11xxxx xx10xxxx xx00xxxx xx10xxxx xx10xxxx ─┐    
+F        │  ┌ 10xxxxxx 10xxxxxx 10xxxxxx 11xxxxxx 10xxxxxx 00xxxxxx 10xxxxxx 10xxxxxx <┘ (.>. 2)
+         │  └────────────────────────────────────────────────────────────────────────────┐
+G   noop └──> 11xxxxxx 01xxxxxx 11xxxxxx 11xxxxxx 11xxxxxx 00xxxxxx 10xxxxxx 11xxxxxx ──┐│
+                                                                                        ││
+I        ┌─── 11xxxxxx 11xxxxxx 11xxxxxx 11xxxxxx 11xxxxxx 00xxxxxx 10xxxxxx 11xxxxxx <─┴┘(.|.)
+         │                                                                            
+J   noop ├──> x1xxxxxx x1xxxxxx x1xxxxxx x1xxxxxx x1xxxxxx x0xxxxxx x1xxxxxx 01xxxxxx ─┐    
+K        │  ┌ 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx x0xxxxxx 1xxxxxxx 1xxxxxxx <┘ (.>. 1)
+         │  └────────────────────────────────────────────────────────────────────────────┐
+L   noop └──> 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx 1xxxxxxx 1xxxxxxx ──┐│
+                                                                                        ││
+M             1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 1xxxxxxx 0xxxxxxx 1xxxxxxx 1xxxxxxx <─┴┘(.|.)
+              │        │        │        └───┐┌───┘        │        │        │
+              │        │        └───────────┐││┌───────────┘        │        │
+              │        └───────────────────┐││││┌───────────────────┘        │
+              └───────────────────────────┐││││││┌───────────────────────────┘
+                                          11111011─┐pext
+                                          00000100<┘comp
+```
+
+As a result of tracing the don't care or `x` bits backwards through the computation,
+I was able to remove six masks and six AND `(.&.)` operations.
+
+I left the rows `A`, `C`, `E`, `G`, `J`, and `L` in as non-operations (`noop`) because
+I wanted to annotate the additional bits I don't care beyond those I already don't care
+about in the original value.
+
+The resulting code is much simpler and faster:
 
 ```haskell
 testWord8s :: Word64 -> Word64
@@ -251,27 +318,34 @@ testWord8s w =  let w8s = w
 {-# INLINE testWord8s #-}
 ```
 
-The astute reader will notice that I have not used the AND operation `(.&.)` in my implementation,
-as per the algorithm described in the previous section, but it still works.
+The optimisations meas we now use only these operations:
 
-Why?
+* `(.|.)` x 3
+* `(.>.)` x 3
+* `pext` x 1
+* `load` x 1
+* `store` x 1
 
-It is because if I fail to mask out the bits, at worst I will "dirty" the bits I will never extract
-into my rank-select bit-string so the outcome is not affected.
+This adds up to `7` very fast register only instructions plus `2` implied memory instructions.
 
-This saves me from having to do 6 AND `(.&.)` operations.
+Which is very close to `1` instruction per byte.
 
 ## Unanswered questions
 
-All up this seems like a lot of work, but what's nice about it is that we are parsing 8-bytes at a time
-and we've managed to avoid any branches or memory allocations within each iteration that could slow
+What's nice about it is that we are parsing 8-bytes at a time using fewer instructions and we've
+managed to avoid any branches or memory allocations within each iteration that could slow
 the iteration down.
 
 Nevertheless, some benchmarks will be necessary to compare this approach to one that parses a byte at
 a time.
 
-You may have noticed that I have used the `pext` operation without describing how it
+You may have noticed that I have used the `pext` operation without properly describing how it
 works nor explained why that operation should be fast.
 
 I will follow up in a future post to explain the `pext` operation in detail and offer some benchmarks
 to show the degree of speed up we might expect from exploiting data parallelism in our parsers.
+
+## Source code
+You can play with the source code here:
+
+https://github.com/haskell-works/hw-simd/blob/master/src/HaskellWorks/Data/Simd/Internal/Bits.hs#L9
