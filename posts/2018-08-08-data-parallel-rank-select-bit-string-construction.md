@@ -334,7 +334,7 @@ The optimisations meas we now use only these operations:
 * `store` x 1
 
 This adds up to `7` very fast register only instructions plus `2` implied memory instructions,
-which is very close to `1` instruction per byte.
+which is very close to `1` instruction per byte for each rank-select bit-string constructed.
 
 ## Unanswered questions
 
