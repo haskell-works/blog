@@ -346,6 +346,5 @@ I will follow up in a future post to explain the `pext` operation in detail and 
 to show the degree of speed up we might expect from exploiting data parallelism in our parsers.
 
 ## Source code
-You can play with the source code here:
-
-https://github.com/haskell-works/hw-simd/blob/master/src/HaskellWorks/Data/Simd/Internal/Bits.hs#L9
+You can play with the source code
+[here](https://github.com/haskell-works/hw-simd/blob/master/src/HaskellWorks/Data/Simd/Internal/Bits.hs#L9).
