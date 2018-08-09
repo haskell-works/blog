@@ -104,7 +104,13 @@ example, the hexadecimal representation of the newline character is
 `0x0a`, so the 64-bit word we are contructing will be:
 
 ```haskell
-let wNewlines = 0x0101010101010101L * 0x0a = 0x0a0a0a0a0a0a0a0aL
+let wNewlines = 0x0101010101010101 * 0x0a :: Word64
+```
+
+or
+
+```haskell
+let wNewlines = 0x0a0a0a0a0a0a0a0aL :: Word64
 ```
 
 The next step is to take the text and pad it with zero bytes to the nearest
