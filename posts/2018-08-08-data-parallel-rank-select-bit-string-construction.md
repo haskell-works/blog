@@ -81,7 +81,7 @@ comp  :: Word64 -> Word64           -- Compute the bit-wise complement of an int
 ```
 
 These operators are pretty standard, but pay close attention to the shift
-operator, which is the standard left shift operator.
+operator, which is the standard right shift operator.
 
 When the bits are laid out in Little-Endian order the right shift operator will
 actually shift all the bits *to the LEFT*.
