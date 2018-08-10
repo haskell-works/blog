@@ -33,7 +33,7 @@ performance baseline that I'm aiming to improve upon.
 Data parallelism describes a computation that can be decomposed into smaller
 computations that can be run in parallel.
 
-We usually think of parsing is an inheritantly serial process due to the fact
+We usually think of parsing is an inherently serial process due to the fact
 the parser must consume the input text one character at a time.
 
 But because I've chosen a simplified format where the identification of
