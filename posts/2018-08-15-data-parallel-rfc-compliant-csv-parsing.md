@@ -3,7 +3,8 @@ title: RFC compliant data-parallel CSV parsing
 author: John Ky
 ---
 
-In last week's post I described how to exploit data-parallelism to
+In last week's [post](../posts/2018-08-08-data-parallel-rank-select-bit-string-construction.html)
+I described how to exploit data-parallelism to
 build a rank-select bit-string for a `cut` compatible
 delimeter-separated-values format, parsing 8-bytes at-a-time.
 
