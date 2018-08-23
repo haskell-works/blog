@@ -93,7 +93,7 @@ $ stack repl
 
 The `pdep` or "parallel deposit" operation, is an operation that takes a bit-mask and deposits
 the least-significant n-bits from the `source` word where `n` is the number of bits in the bit-mask
-and deposit them at the positions mark by 1-bits in the bit-mask.
+and deposits them at the positions marked by 1-bits in the bit-mask.
 
 ```text
 * All words in Little-Endian *
@@ -129,7 +129,7 @@ $ stack repl
 
 # Availability on GHC
 
-In Haskell, the `popCount` operation is avilable via the [`popCount`][3] function in `Data.Bits`
+In Haskell, the `popCount` operation is available via the [`popCount`][3] function in `Data.Bits`
 module of the [base][4] package.
 
 On most modern x86 systems, the `popCount` operation is available on 64-bit integers in the
@@ -245,7 +245,7 @@ all the 1-bits annotated by `*` (d) and becomes our rank (e).
 ![Select in terms of Parallel Deposit](../images/x86-select.png)
 
 The `select i` of a bit-string is length of the smallest prefix that includes `i` 1-bits
-in the bit-string.  Unfortunately, I feel like there is are off-by-one error in the formula
+in the bit-string.  Unfortunately, I feel like there is an off-by-one error in the formula
 and that it should actually be:
 
 <blockquote>
@@ -280,7 +280,7 @@ In last week's [post][1], I explained that in order to create the rank-select bi
 for an RFC compliant CSV format, I needed an operation that can take a bit-string and
 collect all the odd bits into one bit-string and all the even-bits into another.
 
-The example I gave is reproduce here:
+The example I gave is reproduced here:
 
 ```text
 text:     aaa,bbb,ccc␍␊"a""aa","b␍␊bb","c,cc"
@@ -290,17 +290,20 @@ enters:   00000000000001001000010000000100000
 exits:    00000000000000010001000000010000001
 ```
 
+In this post I will be using `odds` in place of `enters` because these are the `odd` bits
+and `evens` in place of `exits` because these are the `even` bits in our bit-string.
+
 The opening parentheses `(` represents all the 1-bits that opening quotes of a quoted
 string and the closing parentheses `)`
 represents all the 1-bits that represents for the closing quotes.
 
-We need to build `enters` which has all the odd 1-bits (ie. the opening quotes) and `leaves`
+We need to build `odds` which has all the odd 1-bits (ie. the opening quotes) and `leaves`
 which has all the even 1-bits (ie. the closing quotes).
 
-We must somehow be able to produce the bit-strings `enters` and `exits` from the
+We must somehow be able to produce the bit-strings `odds` and `evens` from the
 bit-string `quotes` very efficiently.
 
-This is actually very easy with a single application `pdep` operation for each bit-string
+This is actually very easy with a single application of the `pdep` operation for each bit-string
 we produce:
 
 ```haskell
@@ -324,20 +327,20 @@ I will leave it to the reader to work out why this works.  😉
 # Next steps
 
 We now have very fast rank-select operations for short bit-vectors of 64-bits,
-which is sufficient for CSV streaming because it allows us to process 64 bytes of CVS
+which is sufficient for CSV streaming because it allows us to process 64 bytes of CSV
 text at a time.
 
-We also have the ability to split the odds and even bits of out bit-string into
+We also have the ability to split the odds and even bits out of our bit-string into
 separate bit-strings.
 
 All the conceptual pieces needed to produce the necessary rank-select bit-strings
-for our high-performance RFC compliant CVS parser and pieces need to subsequently
+for our high-performance RFC compliant CSV parser and pieces need to subsequently
 traverse the CSV text and extract interesting data have been described.
 
 In my next post I will talk about how SIMD instructions can be used to make
 our parser go even faster!
 
-Stay tune!
+Stay tuned!
 
 [1]: ../posts/2018-08-08-data-parallel-rank-select-bit-string-construction.html
 [2]: ../posts/2018-08-01-introduction-to-rank-select-bit-string.html
