@@ -40,3 +40,18 @@ td.sourceCode {
 *.haskell.sourceCode span.re { }
 *.haskell.sourceCode span.er { color: red; font-weight: bold; }
 *.haskell.sourceCode         { color: #E6E6E6; }
+
+code.haskell.sourceCode {
+  counter-reset: haskell-block;
+}
+
+code.haskell a.sourceLine::before {
+  counter-increment:  haskell-block;
+  content:            counter(haskell-block);
+  display:            inline-block;
+  width:              2em;
+  padding-right:      0.5em;
+  margin-right:       0.5em;
+  border-right:       1px gray solid;
+  text-align:         right;
+}

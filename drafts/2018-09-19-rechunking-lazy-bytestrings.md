@@ -3,22 +3,23 @@ title: Rechunking lazy bytestrings
 author: John Ky
 ---
 
-In the previous post, I've established that I want to use SIMD for speed.
+In the [previous post][1], we've established that we want to use SIMD for speed.
 
-I'd also like my CSV parser stream the data to avoid excessive memory usage
-so I'm going to have to read my CSV input in chunks.
+We'd also like our CSV parser stream the data to avoid excessive memory usage
+so we're going to have to read my CSV input in chunks.
 
 Given that SIMD registers are currently up to 512-bits in size, the chunk
-size will need to be multiples of 64-bytes.
+size will need to be multiples of 64-bytes to work with arbitrary SIMD
+instructions.
 
 This post will look at chunk size Haskell's library actually gives us
-explore some ways I can get the required chunk size I need.
+explore some ways we can get the required chunk size we need.
 
 # Lazy IO
 
 Due to laziness, streaming in Haskell is straightforward.  The following
-function function lazily reads the entire contents of the input file and
-writes them into the output file.
+function lazily reads the entire contents of the input file and writes
+them into the output file.
 
 ```haskell
 import qualified Data.ByteString.Lazy
@@ -42,7 +43,7 @@ chunkOverhead :: Int
 chunkOverhead = 2 * sizeOf (undefined :: Int)
 ```
 
-Evidence of this behaviour is observable by using the `Data.ByteString.Lazy.toChunks`
+Evidence of this behaviour is observable by using the [`toChunks`][2]
 function to convert the lazy bytestring and inspecting their sizes.
 
 The following command reads a file with lazy IO and counts the frequency of each
@@ -151,46 +152,70 @@ Chunk histogram:
 16992,11
 ```
 
-# Rechunking
+# Rechunking & resegmenting
 
 One strategy we could use to ensure our bytestrings are always chunked to 64-byte multiples is
-to rechunk the bytestrings.
-
-In doing so, we'd want to reduce the amount of copying necessary.
-
-Suppose in the following diagram that *A* represents 64-byte boundaries and *B* represents
-the input data we want to rechunk.
+to [`rechunk`][3] the bytestrings into equal chunk sizes like the following:
 
 ```text
-A |----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|----|
-B |---------------a---------------|---------b----------|-c-|-------------d---------------|
-C |--------------e--------------|=f==|------g-------|=h==|=i==|-----------j------------|=k==|
+|---------------a---------------|---------b----------|-c-|-------------d---------------|
+|-d--|-e--|-f--|-g--|-h--|-i--|=j==|-k--|-l--|-m--|=n==|=o==|-p--|-q--|-r--|-s--|-t--|u|
 ```
 
-We can perform the rechunking as in *C* to reuse the most amount of original chunk data as
-possible.  Here, the bytestrings *e* *g* and *j* are strict substrings of *a* *b* and *d*
-so they share the same buffers and no copying is necessary.  *f* *h* *i* and *k* are buffers
-which straddle the chunk boundaries in the original bytestring *B* and require copying
-to build appropriately aligned chunks.  The bytes in these chunks will need to be copied
-so they are kept to the smallest size possible to avoid copying more than necessary.
-The last chunk *k* is padded with zeros to ensure it is of a valid chunk size as well.
+In the above, the chunks `d`-`i`, `k`-`m`, and `p`-`u` don't require any byte copying because
+they are strict substrings of the chunks `a`, `b` and `d` respectively.
 
+`j`, `n`, and `o` however do require copy because their bytes come from multipe source chunks.
 
-```haskell
-resegmentPadded :: Int -> [BS.ByteString] -> [BS.ByteString]
-resegmentPadded multiple = go
-  where go (bs:bss) = case BS.length bs of
-              bsLen -> if bsLen < multiple
-                then case multiple - bsLen of
-                  bsNeed -> case bss of
-                    (cs:css) -> case BS.length cs of
-                      csLen | csLen >  bsNeed -> (bs <> BS.take bsNeed cs ):go (BS.drop bsNeed cs:css)
-                      csLen | csLen == bsNeed -> (bs <> cs                ):go                    css
-                      _     | otherwise       ->                            go ((bs <> cs)       :css)
-                    [] -> [bs <> BS.replicate bsNeed 0]
-                else case (bsLen `div` multiple) * multiple of
-                  bsCroppedLen -> if bsCroppedLen == bsLen
-                    then bs:go bss
-                    else BS.take bsCroppedLen bs:go (BS.drop bsCroppedLen bs:bss)
-        go [] = []
+The need for copying is denoted by using the `=` characters.
+
+The above scheme may minimise the amount of byte copying, but it is still fairly expensive
+because many bytestring objects are created.
+
+To reduce the number of bytestring objects, another approach is to [`resegment`][4] the data
+instead.
+
+This process is shown below:
+
+```text
+|---------------a---------------|---------b----------|-c-|-------------d---------------|
+|--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|k|
 ```
+
+Here, chunks `v`, `w` and `x` are created with a size that is the largest multiple of the
+chunk size allowed by the source chunk that is equivalent to the concatenation of the
+`d`-`i`, `k`-`m`, and `p`-`u` chunks in the `rechunk` example.
+
+This gets us to the point where all except the last chunk is a multiple of the chunk size.
+
+For doing our SIMD operations, we'd like all the chunks to be a multiple of the chunk size
+so [`resegmentPadded`][5] will pad the last chunk to the chunk size with 0 bytes:
+
+```text
+|---------------a---------------|---------b----------|-c-|-------------d---------------|
+|--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
+```
+
+Some benchmarking will give us some idea of how much rechunking and resegmenting costs us:
+
+```bash
+$ git clone git@github.com:haskell-works/hw-simd-cli.git
+$ cd hw-simd-cli
+$ ./project.sh install
+$ cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m default > /dev/null
+7.08GiB 0:00:05 [1.27GiB/s]
+$ cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m rechunk -c 64 > /dev/null
+7.08GiB 0:00:22 [ 317MiB/s]
+$ cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m resegment -c 64 > /dev/null
+7.08GiB 0:00:06 [1.15GiB/s]
+```
+
+The results show the cost of using small chunks is drastic compared to the much
+more modest overhead of resegmenting.
+
+
+[1]: ../posts/2018-09-03-simd-with-linecount.html
+[2]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/Data-ByteString-Lazy.html#v:toChunks
+[3]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:rechunk
+[4]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegment
+[5]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegmentPadded
