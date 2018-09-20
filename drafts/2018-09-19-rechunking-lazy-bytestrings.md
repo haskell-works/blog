@@ -213,6 +213,76 @@ $ cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m resegment -c 64 > /de
 The results show the cost of using small chunks is drastic compared to the much
 more modest overhead of resegmenting.
 
+# Pre-chunked reading
+
+An alternative to resegmenting the lazy bytestring is to read the bytes with the desired
+segment size in the first place.
+
+The `hGetContents` function from the `bytestring` library is implemented in terms of
+`hGetContentsN` like this:
+
+```haskell
+hGetContentsN :: Int -> Handle -> IO ByteString
+hGetContentsN k h = lazyRead -- TODO close on exceptions
+  where
+    lazyRead = unsafeInterleaveIO loop
+
+    loop = do
+        c <- S.hGetSome h k -- only blocks if there is no data available
+        if S.null c
+          then hClose h >> return Empty
+          else do cs <- lazyRead
+                  return (Chunk c cs)
+```
+
+A different version of the function which guarantees that every chunk is the
+same size (except the last) can be implemented by using `hGetBuf` and
+`createAndTrim` instead of `hGetSome` and keeping everything else the same:
+
+```haskell
+hGetContentsChunkedBy :: Int -> IO.Handle -> IO LBS.ByteString
+hGetContentsChunkedBy k h = lazyRead
+  where lazyRead = IO.unsafeInterleaveIO loop
+        loop = do
+            c <- BS.createAndTrim k $ \p -> IO.hGetBuf h p k
+            if BS.null c
+              then IO.hClose h >> return LBS.Empty
+              else LBS.Chunk c <$> lazyRead
+```
+
+Benchmarking this shows the performance is comparable to resegmenting.
+
+```bash
+$ for x in {1..5}; do cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m default > /dev/null; done
+7.08GiB 0:00:06 [1.10GiB/s]
+7.08GiB 0:00:05 [1.26GiB/s]
+7.08GiB 0:00:05 [1.29GiB/s]
+7.08GiB 0:00:05 [1.27GiB/s]
+7.08GiB 0:00:05 [1.27GiB/s]
+$ for x in {1..5}; do cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m prechunk -c 32704 > /dev/null; done
+7.08GiB 0:00:06 [1.12GiB/s]
+7.08GiB 0:00:06 [1.16GiB/s]
+7.08GiB 0:00:06 [1.10GiB/s]
+7.08GiB 0:00:06 [1.13GiB/s]
+7.08GiB 0:00:06 [1.14GiB/s]
+$ for x in {1..5}; do cat ~/7g.csv | pv -t -e -b -a | hw-simd cat -i - -o - -m resegment -c 64 > /dev/null; done
+7.08GiB 0:00:06 [1.14GiB/s]
+7.08GiB 0:00:06 [1.16GiB/s]
+7.08GiB 0:00:06 [1.06GiB/s]
+7.08GiB 0:00:05 [1.18GiB/s]
+7.08GiB 0:00:05 [1.19GiB/s]
+```
+
+This is likely because the chunks returned by `hGetContents` were already large enough that the extra effort
+to resegment the lazy bytestring is negligible.
+
+# Closing Remarks
+
+This post looked at how we can resegment our lazy bytestring to make the chunk sizes compatible with
+SIMD instructions at a reasonable cost.
+
+The next post will look at using FFI to call into C functions that use SIMD to do the heavy lifting.
+
 
 [1]: ../posts/2018-09-03-simd-with-linecount.html
 [2]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/Data-ByteString-Lazy.html#v:toChunks
