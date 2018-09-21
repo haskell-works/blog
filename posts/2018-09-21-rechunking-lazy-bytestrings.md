@@ -159,13 +159,13 @@ to [`rechunk`][5] the bytestrings into equal chunk sizes like the following:
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
-|-d--|-e--|-f--|-g--|-h--|-i--|=j==|-k--|-l--|-m--|=n==|=o==|-p--|-q--|-r--|-s--|-t--|u|
+|-e--|-f--|-g--|-h--|-i--|-j--|=k==|-l--|-m--|-n--|=o==|=p==|-q--|-r--|-s--|-t--|-u--|v|
 ```
 
-In the above, the chunks `d`-`i`, `k`-`m`, and `p`-`u` don't require any byte copying because
+In the above, the chunks `e`-`j`, `l`-`n`, and `q`-`v` don't require any byte copying because
 they are strict substrings of the chunks `a`, `b` and `d` respectively.
 
-`j`, `n`, and `o` however do require copy because their bytes come from multipe source chunks.
+`k`, `o`, and `p` however do require copy because their bytes come from multipe source chunks.
 
 The need for copying is denoted by using the `=` characters.
 
@@ -179,12 +179,12 @@ This process is shown below:
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
-|--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|k|
+|--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|v|
 ```
 
 Here, chunks `v`, `w` and `x` are created with a size that is the largest multiple of the
 chunk size allowed by the source chunk that is equivalent to the concatenation of the
-`d`-`i`, `k`-`m`, and `p`-`u` chunks in the `rechunk` example.
+`e`-`j`, `l`-`n`, and `q`-`v` chunks in the `rechunk` example.
 
 This gets us to the point where all except the last chunk is a multiple of the chunk size.
 
@@ -193,15 +193,15 @@ so [`resegmentPadded`][7] will pad the last chunk to the chunk size with 0 bytes
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
-|--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
+|--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|=z==|
 ```
 
 For clarity, I provide the diagrams for each strategy side-by-side:
 
 ```text
-rechunk:          |-d--|-e--|-f--|-g--|-h--|-i--|=j==|-k--|-l--|-m--|=n==|=o==|-p--|-q--|-r--|-s--|-t--|u|
-resegment:        |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|k|
-resegmentPadded:  |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
+rechunk:          |-e--|-f--|-g--|-h--|-i--|-j--|=k==|-l--|-m--|-n--|=o==|=p==|-q--|-r--|-s--|-t--|-u--|v|
+resegment:        |--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|v|
+resegmentPadded:  |--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|=z==|
 ```
 
 Some benchmarking will give us some idea of how much rechunking and resegmenting costs us:
