@@ -196,7 +196,7 @@ so [`resegmentPadded`][7] will pad the last chunk to the chunk size with 0 bytes
 |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
 ```
 
-For clarify, I provide the diagrams for each strategy side-by-side:
+For clarity, I provide the diagrams for each strategy side-by-side:
 
 ```text
 rechunk:          |-d--|-e--|-f--|-g--|-h--|-i--|=j==|-k--|-l--|-m--|=n==|=o==|-p--|-q--|-r--|-s--|-t--|u|
