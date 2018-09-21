@@ -44,7 +44,7 @@ chunkOverhead = 2 * sizeOf (undefined :: Int)
 ```
 
 Evidence of this behaviour is observable by using the [`toChunks`][4]
-function to convert the lazy bytestring and inspecting their size5.
+function to convert the lazy bytestring and inspecting their size.
 
 The following command reads a file with lazy IO and counts the frequency of each
 chunk size:
