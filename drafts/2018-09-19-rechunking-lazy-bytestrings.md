@@ -6,14 +6,14 @@ author: John Ky
 In the [previous post][1], we've established that we want to use SIMD for speed.
 
 We'd also like our CSV parser stream the data to avoid excessive memory usage
-so we're going to have to read my CSV input in chunks.
+so we're going to have to read the CSV input in chunks.
 
 Given that SIMD registers are currently up to 512-bits in size, the chunk
 size will need to be multiples of 64-bytes to work with arbitrary SIMD
 instructions.
 
-This post will look at chunk size Haskell's library actually gives us
-explore some ways we can get the required chunk size we need.
+This post will look at the chunk size Haskell's [`bytestring`][2] library actually
+gives us and  explore some ways we can get the required chunk size we need.
 
 # Lazy IO
 
@@ -22,7 +22,7 @@ function lazily reads the entire contents of the input file and writes
 them into the output file.
 
 ```haskell
-import qualified Data.ByteString.Lazy
+import qualified Data.ByteString.Lazy as LBS
 
 cat :: FilePath -> FilePath -> IO ()
 cat inputFile outputFile = do
@@ -32,7 +32,7 @@ cat inputFile outputFile = do
 
 For efficiency, the lazy bytestring is actually very similar in structure to
 a list of strict bytestrings.  Each bytestring represents a chunk of the
-input file contents with a carefully chosen chunk size to maximise performance.
+input file contents with a [carefully chosen chunk size][3] to maximise performance.
 
 ```haskell
 defaultChunkSize :: Int
@@ -43,8 +43,8 @@ chunkOverhead :: Int
 chunkOverhead = 2 * sizeOf (undefined :: Int)
 ```
 
-Evidence of this behaviour is observable by using the [`toChunks`][2]
-function to convert the lazy bytestring and inspecting their sizes.
+Evideence of this behaviour is observable by using the [`toChunks`][4]
+function to convert the lazy bytestring and inspecting their size5.
 
 The following command reads a file with lazy IO and counts the frequency of each
 chunk size:
@@ -155,7 +155,7 @@ Chunk histogram:
 # Rechunking & resegmenting
 
 One strategy we could use to ensure our bytestrings are always chunked to 64-byte multiples is
-to [`rechunk`][3] the bytestrings into equal chunk sizes like the following:
+to [`rechunk`][5] the bytestrings into equal chunk sizes like the following:
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
@@ -172,7 +172,7 @@ The need for copying is denoted by using the `=` characters.
 The above scheme may minimise the amount of byte copying, but it is still fairly expensive
 because many bytestring objects are created.
 
-To reduce the number of bytestring objects, another approach is to [`resegment`][4] the data
+4o reduce the number of bytestring objects, another approach is to [`resegment`][6] the data
 instead.
 
 This process is shown below:
@@ -189,11 +189,19 @@ chunk size allowed by the source chunk that is equivalent to the concatenation o
 This gets us to the point where all except the last chunk is a multiple of the chunk size.
 
 For doing our SIMD operations, we'd like all the chunks to be a multiple of the chunk size
-so [`resegmentPadded`][5] will pad the last chunk to the chunk size with 0 bytes:
+so [`resegmentPadded`][7] will pad the last chunk to the chunk size with 0 bytes:
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
 |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
+```
+
+For clarify, I provide the diagrams for each strategy side-by-side:
+
+```text
+rechunk:          |-d--|-e--|-f--|-g--|-h--|-i--|=j==|-k--|-l--|-m--|=n==|=o==|-p--|-q--|-r--|-s--|-t--|u|
+resegment:        |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|k|
+resegmentPadded:  |--------------v--------------|=j==|------w-------|=n==|=o==|-----------x------------|=y==|
 ```
 
 Some benchmarking will give us some idea of how much rechunking and resegmenting costs us:
@@ -218,8 +226,8 @@ more modest overhead of resegmenting.
 An alternative to resegmenting the lazy bytestring is to read the bytes with the desired
 segment size in the first place.
 
-The `hGetContents` function from the `bytestring` library is implemented in terms of
-`hGetContentsN` like this:
+The [`hGetContents`][8] function from the [`bytestring`][2] library is implemented in terms of
+[`hGetContentsN`][9] like this:
 
 ```haskell
 hGetContentsN :: Int -> Handle -> IO ByteString
@@ -235,9 +243,10 @@ hGetContentsN k h = lazyRead -- TODO close on exceptions
                   return (Chunk c cs)
 ```
 
-A different version of the function which guarantees that every chunk is the
-same size (except the last) can be implemented by using `hGetBuf` and
-`createAndTrim` instead of `hGetSome` and keeping everything else the same:
+[`hGetContentsChunkedBy`][13], a different version of the function which guarantees
+that every chunk is the same size (except the last) can be implemented by using
+[`hGetBuf`][10] and [`createAndTrim`][11] instead of [`hGetSome`][12] and keeping
+everything else the same:
 
 ```haskell
 hGetContentsChunkedBy :: Int -> IO.Handle -> IO LBS.ByteString
@@ -285,7 +294,15 @@ The next post will look at using FFI to call into C functions that use SIMD to d
 
 
 [1]: ../posts/2018-09-03-simd-with-linecount.html
-[2]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/Data-ByteString-Lazy.html#v:toChunks
-[3]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:rechunk
-[4]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegment
-[5]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegmentPadded
+[2]: http://hackage.haskell.org/package/bytestring
+[3]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/src/Data.ByteString.Lazy.Internal.html#defaultChunkSize
+[4]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/Data-ByteString-Lazy.html#v:toChunks
+[5]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:rechunk
+[6]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegment
+[7]: http://hackage.haskell.org/package/hw-prim-0.6.2.15/docs/HaskellWorks-Data-ByteString.html#v:resegmentPadded
+[8]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/Data-ByteString-Lazy.html#v:hGetContents
+[9]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/src/Data.ByteString.Lazy.html#hGetContentsN
+[10]: http://hackage.haskell.org/package/base-4.11.1.0/docs/System-IO.html#v:hGetBuf
+[11]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/src/Data.ByteString.Internal.html#createAndTrim
+[12]: http://hackage.haskell.org/package/bytestring-0.10.8.2/docs/src/Data.ByteString.html#hGetSome
+[13]: http://hackage.haskell.org/package/hw-prim-0.6.2.17/docs/HaskellWorks-Data-ByteString-Lazy.html#v:hGetContentsChunkedBy
