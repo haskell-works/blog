@@ -43,7 +43,7 @@ chunkOverhead :: Int
 chunkOverhead = 2 * sizeOf (undefined :: Int)
 ```
 
-Evideence of this behaviour is observable by using the [`toChunks`][4]
+Evidence of this behaviour is observable by using the [`toChunks`][4]
 function to convert the lazy bytestring and inspecting their size5.
 
 The following command reads a file with lazy IO and counts the frequency of each
