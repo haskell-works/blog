@@ -165,7 +165,7 @@ to [`rechunk`][5] the bytestrings into equal chunk sizes like the following:
 In the above, the chunks `e`-`j`, `l`-`n`, and `q`-`v` don't require any byte copying because
 they are strict substrings of the chunks `a`, `b` and `d` respectively.
 
-`k`, `o`, and `p` however do require copy because their bytes come from multipe source chunks.
+`k`, `o`, and `p` however do require copying because their bytes come from multipe source chunks.
 
 The need for copying is denoted by using the `=` characters.
 
@@ -197,8 +197,8 @@ so [`resegmentPadded`][7] will pad the last segment to the chunk size with 0 byt
 |--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|=z==|
 ```
 
-This padded segment denoted `z` will require byte copying from `d` and zero-filling the remaining
-buffer to the chunk size.
+This padded segment denoted by `z` will require byte copying from `d` and zero-filling the remaining
+buffer up to the chunk size.
 
 For clarity, I provide the diagrams for each strategy side-by-side:
 
