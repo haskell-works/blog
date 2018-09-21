@@ -172,7 +172,7 @@ The need for copying is denoted by using the `=` characters.
 The above scheme may minimise the amount of byte copying, but it is still fairly expensive
 because many bytestring objects are created.
 
-4o reduce the number of bytestring objects, another approach is to [`resegment`][6] the data
+To reduce the number of bytestring objects, another approach is to [`resegment`][6] the data
 instead.
 
 This process is shown below:
@@ -182,19 +182,23 @@ This process is shown below:
 |--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|v|
 ```
 
-Here, chunks `v`, `w` and `x` are created with a size that is the largest multiple of the
-chunk size allowed by the source chunk that is equivalent to the concatenation of the
-`e`-`j`, `l`-`n`, and `q`-`v` chunks in the `rechunk` example.
+Here, segments `v`, `w` and `y` are substrings of `a`, `b` and `d` respectively with a size
+that is the largest multiple of the chunk size allowed by the source segments.  The segments
+are equivalent to the concatenation of the `e`-`j`, `l`-`n`, and `q`-`v` chunks in the
+`rechunk` example.
 
-This gets us to the point where all except the last chunk is a multiple of the chunk size.
+This gets us to the point where all except the last segment is a multiple of the chunk size.
 
-For doing our SIMD operations, we'd like all the chunks to be a multiple of the chunk size
-so [`resegmentPadded`][7] will pad the last chunk to the chunk size with 0 bytes:
+For doing our SIMD operations, we'd like all the segments to be a multiple of the chunk size
+so [`resegmentPadded`][7] will pad the last segment to the chunk size with 0 bytes:
 
 ```text
 |---------------a---------------|---------b----------|-c-|-------------d---------------|
 |--------------w--------------|=k==|------x-------|=o==|=p==|-----------y------------|=z==|
 ```
+
+This padded segment denoted `z` will require byte copying from `d` and zero-filling the remaining
+buffer to the chunk size.
 
 For clarity, I provide the diagrams for each strategy side-by-side:
 
