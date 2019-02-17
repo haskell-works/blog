@@ -15,44 +15,45 @@ use vectors of `Word64` for efficiency.
 
 As per usual, words when expressed in binary form are expressed in Little Endian.
 
-# Propagating the carry
+# Overflows
 
-CPUs perform addition on registers of finite size (in number of bits) so when
-adding large integers, there inevitably comes a point where the resulting
-integer is large enough to fit in the register and an overflow occurs.
+CPUs perform addition on registers of finite size (in number of bits we will call
+`n`) so when adding large integers, there inevitably comes a point where the
+resulting integer requires more than `n` bits and will not fit in the register
+and an overflow occurs.
 
-During an overflow, the least signifant bits of the result up to the size of
-the target register are stored and the most significant bit of the integer
-is lost.
+During an overflow, the least `n` signifant bits of the result are in the target
+register resulting in a number that is smaller than one of the addends.  The
+`n`th bit, called the carry bit, would have been set to `1` but due to lack of
+stroage is lost instead.
 
-We call this bit the carry bit.
+In order to perform additions on bit-vectors of greater than size `n`, we will
+need to somehow perform repeated additions using register sized slices of the
+bit-vector recover the carry bits and propagate them.
 
-We would like a way to recover the carry bit so that it can be added to the
-next word in the bit vector.
+# Recovering the carry
 
-For example we show how to add two bit-vectors `a` and `b` in the following
-diagram
+As mentioned earlier, the carry bit is notionally set when there is an overflow
+and an overflow also results in a truncated value that is smaller than at least
+one of the addends.
 
-```text
-                ABCDEFGH   IJKLMNOP   QRSTUVWX   YZαβγδεζ
-               ┌─────────────────────────────────────────
-carry         0│00000000─┬─10000000─┬─10000000─┬─10000000
-a = 128       1│00010001─┤ 00011111─┤ 10001000─┤ 00000000
-b = 128       2│00010001─┘ 11111000─┘ 00011111─┘ 11000000
-a + b         3│00001000   00011000   01010000   00100000
+We can therefore determine whether the carry bit should be set by testing for the
+latter condition: `total < a || total < b`
+
+This allows us to write a function that returns both the sum and the carry
+
+```haskell
+sumCarry0 :: Wor64 -> Wor64 -> (Wor64, Wor64)
+sumCarry0 a b = (total, carry)
+  where total     = a + b
+        carry  = if total < a || total < b then 1 else 0
 ```
 
-Starting in the left-most column, we initialise the carry `0A-0H` to
-`0x00`.  We then compute the sum `3A-3H = 0A-0H + 1A-1H + 2A-2H`.
+This is fine for additing the first two words in our bit-vector, the addition
+of following words will need to incorporate the carry.  This ends up being
+a threeway addition that includes the carry.
 
-This sum can be computed with the `sumCarry` function:
-
-The `total` is calculated by adding all three words (`a`, `b`, and `carry`)
-ignoring overflow.  Separately, the `newCarry` is calculated by comparing
-each of the addends to the total.  The reason this works is that adding
-three positive numbers together ought result in a number that is at least
-any one of them.  If this expectation does not hold, we know overflow has
-occurred and therefore the carry is `1`.
+We should therefore extend the function to take `carry` as an argument:
 
 ```haskell
 sumCarry1 :: Wor64 -> Wor64 -> Wor64 -> (Wor64, Wor64)
@@ -61,15 +62,39 @@ sumCarry1 a b carry = (total, newCarry)
         newCarry  = if total < a || total < b || total < carry then 1 else 0
 ```
 
-Alternatively we might want to test for `total < a + b + carry`, but that
-doesn't work if `a + b + carry` doesn't always fit in our word size, so we
-settle with `total < a .|. b .|. carry` instead.
+The alternative more intuitive formulation of `total < a + b + carry` does not
+work because the fact that `a + b + carry` overflows means the test is invalid.
 
-This works because we can rewrite `total < a || total < b || total < carry` as
-`total < (a ``max`` b ``max`` carry)` and the following identity is true:
-`a ``max`` b ``max`` carry <= a .|. b .|. carry <= a + b + carry`.
+We can however make the observation that unconstrained by word sizes, the test
+is valid and we can use this to derive an alternative test that works.
 
-The result code results in fewer operations:
+Jumping back to our first implementation the expression `total < a || total < b || total < carry`
+can be rewritten as `total < (a ``max`` b ``max`` carry)`.  That is to say, the
+total is less than any of the other numbers if the total is less than the largest
+of them.
+
+We now have two different expressions that test for carry:
+
+* `total < (a ``max`` b ``max`` carry)`
+* `total < a + b + carry`
+
+We can then make the observation that the following inequation holds:
+
+`a ``max`` b ``max`` carry  <=  a .|. b .|. carry  <=  a + b + carry`
+
+We know the left inequation is true because the largest addend ORed with
+any other number will be at least the value of the largest addend.
+
+We know the right inequation to be true because we can consider two
+cases.  If there is not overlap in the addends then the LHS and the RHS
+end up being equal.  If there is overlap, then the LHS is conceptually
+like a sum that has lost bits where there is overlap in one of the
+registers, resulting in a smaller value.
+
+We can therefore substitute the following test instead which has
+fewer instructions.
+
+Ths results in the following implementation:
 
 ```haskell
 sumCarry2 :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
@@ -78,8 +103,13 @@ sumCarry2 a b carry = (total, newCarry)
         newCarry  = if total < a .|. b .|. carry then 1 else 0
 ```
 
+In practise the impact of reducing the implementation by two instructions
+is too small to make an observable difference.
+
 Unfortunately both version involve an `if` statement and on modern CPU architectures
 because of pipelining, there is a performance penalty for these kinds of branches.
+
+# Branchless tests
 
 Fortunately, we can avoid the `if` test altogether by making a branchless comparison
 using the `ltWord#` primop which will return `1` instead of `0` when the test is true.
@@ -123,6 +153,35 @@ sumCarry3 a b carry = (total, newCarry)
         total     = preTotal + carry
         newCarry  = total `ltWord` (a .|. b .|. carry)
 ```
+
+
+For example we show how to add two bit-vectors `a` and `b` in the following
+diagram
+
+```text
+                ABCDEFGH   IJKLMNOP   QRSTUVWX   YZαβγδεζ
+               ┌─────────────────────────────────────────
+carry         0│00000000─┬─10000000─┬─10000000─┬─10000000
+a = 128       1│00010001─┤ 00011111─┤ 10001000─┤ 00000000
+b = 128       2│00010001─┘ 11111000─┘ 00011111─┘ 11000000
+a + b         3│00001000   00011000   01010000   00100000
+```
+
+Starting in the left-most column, we initialise the carry `0A-0H` to
+`0x00`.  We then compute the sum `3A-3H = 0A-0H + 1A-1H + 2A-2H`.
+
+This sum can be computed with the `sumCarry` function:
+
+The `total` is calculated by adding all three words (`a`, `b`, and `carry`)
+ignoring overflow.  Separately, the `newCarry` is calculated by comparing
+each of the addends to the total.  The reason this works is that adding
+three positive numbers together ought result in a number that is at least
+any one of them.  If this expectation does not hold, we know overflow has
+occurred and therefore the carry is `1`.
+
+
+We would like a way to recover the carry bit so that it can be added to the
+next word in the bit vector.
 
 Firstly we perform bytewise additions:
 
