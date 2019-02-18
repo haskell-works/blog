@@ -106,8 +106,9 @@ sumCarry2 a b carry = (total, newCarry)
 In practise the impact of reducing the implementation by two instructions
 is too small to make an observable difference.
 
-Unfortunately both version involve an `if` statement and on modern CPU architectures
-because of pipelining, there is a performance penalty for these kinds of branches.
+Unfortunately both version involve an `if` statement and on modern CPU
+architectures because of pipelining, there is a performance penalty for
+these kinds of branches.
 
 # Branchless tests
 
