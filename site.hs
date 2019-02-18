@@ -1,14 +1,21 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 
-import Data.Monoid ((<>))
+import Codec.Picture             (writeDynamicPng)
+import Data.Monoid               ((<>))
 import Hakyll
+import Hakyll.Contrib.LaTeX
+import Hakyll.Web.Pandoc
+import Image.LaTeX.Render        (defaultEnv, displaymath, imageForFormula)
+import Image.LaTeX.Render.Pandoc
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
 --------------------------------------------------------------------------------
 main :: IO ()
 main = do
+  renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
+
   hakyll $ do
     match "images/*" $ do
       route   idRoute

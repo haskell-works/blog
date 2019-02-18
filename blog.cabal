@@ -11,5 +11,6 @@ executable site
                   , latex-formulae-image
                   , latex-formulae-pandoc
                   , latex-formulae-hakyll
+                  , JuicyPixels
   ghc-options:      -threaded
   default-language: Haskell2010
