@@ -3,6 +3,11 @@ resolver: lts-12.26
 packages:
 - .
 
+extra-deps:
+- latex-formulae-hakyll-0.2.0.4
+- latex-formulae-image-0.1.1.4
+- latex-formulae-pandoc-0.2.0.6
+
 flags:
   pandoc:
     highlighting: true
