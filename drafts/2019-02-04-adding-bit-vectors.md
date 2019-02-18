@@ -18,13 +18,13 @@ As per usual, words when expressed in binary form are expressed in Little Endian
 # Overflows
 
 CPUs perform addition on registers of finite size (in number of bits we will call
-`n`) so when adding large integers, there inevitably comes a point where the
-resulting integer requires more than `n` bits and will not fit in the register
+$$n$$) so when adding large integers, there inevitably comes a point where the
+resulting integer requires more than $$n$$ bits and will not fit in the register
 and an overflow occurs.
 
-During an overflow, the least `n` signifant bits of the result are in the target
+During an overflow, the least $$n$$ signifant bits of the result are in the target
 register resulting in a number that is smaller than one of the addends.  The
-`n`th bit, called the carry bit, would have been set to `1` but due to lack of
+$$n^{th}$$ bit, called the carry bit, would have been set to $$1$$ but due to lack of
 stroage is lost instead.
 
 In order to perform additions on bit-vectors of greater than size `n`, we will
@@ -38,7 +38,7 @@ and an overflow also results in a truncated value that is smaller than at least
 one of the addends.
 
 We can therefore determine whether the carry bit should be set by testing for the
-latter condition: `total < a || total < b`
+latter condition: $$total < a \lor total < b$$
 
 This allows us to write a function that returns both the sum and the carry
 
@@ -53,7 +53,7 @@ This is fine for additing the first two words in our bit-vector, the addition
 of following words will need to incorporate the carry.  This ends up being
 a threeway addition that includes the carry.
 
-We should therefore extend the function to take `carry` as an argument:
+We should therefore extend the function to take $$carry$$ as an argument:
 
 ```haskell
 sumCarry1 :: Wor64 -> Wor64 -> Wor64 -> (Wor64, Wor64)
@@ -62,27 +62,29 @@ sumCarry1 a b carry = (total, newCarry)
         newCarry  = if total < a || total < b || total < carry then 1 else 0
 ```
 
-The alternative more intuitive formulation of `total < a + b + carry` does not
-work because the fact that `a + b + carry` overflows means the test is invalid.
+The alternative more intuitive formulation of $$total < a + b + carry$$ does not
+work because the fact that $$a + b + carry$$ overflows means the test is invalid.
 
 We can however make the observation that unconstrained by word sizes, the test
 is valid and we can use this to derive an alternative test that works.
 
-Jumping back to our first implementation the expression `total < a || total < b || total < carry`
-can be rewritten as `total < (a ``max`` b ``max`` carry)`.  That is to say, the
+Jumping back to our first implementation the expression
+$$total < a \lor total < b \lor total < carry$$
+can be rewritten as $$total < max(a, b, carry)$$, where $$max$$ is a function that
+returns the largest argument.  That is to say, the
 total is less than any of the other numbers if the total is less than the largest
 of them.
 
 We now have two different expressions that test for carry:
 
-* `total < (a ``max`` b ``max`` carry)`
-* `total < a + b + carry`
+* $$total < max(a, b, carry)$$
+* $$total < a + b + carry$$
 
 We can then make the observation that the following inequation holds:
 
-`a ``max`` b ``max`` carry  <=  a .|. b .|. carry  <=  a + b + carry`
+$$max(a, b, carry) \leq  a \oplus b \oplus carry  \leq  a + b + carry$$
 
-We know the left inequation is true because the largest addend ORed with
+We know the left inequation is true because the largest addend XORed with
 any other number will be at least the value of the largest addend.
 
 We know the right inequation to be true because we can consider two

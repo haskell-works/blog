@@ -27,13 +27,13 @@ main = do
 
     match (fromList ["about.rst", "contact.markdown"]) $ do
       route   $ setExtension "html"
-      compile $ pandocCompiler
+      compile $ pandocCompilerWithTransformM defaultHakyllReaderOptions defaultHakyllWriterOptions (renderFormulae defaultPandocFormulaOptions)
         >>= loadAndApplyTemplate "templates/default.html" defaultContext
         >>= relativizeUrls
 
     match "posts/*" $ do
       route $ setExtension "html"
-      compile $ pandocCompiler
+      compile $ pandocCompilerWithTransformM defaultHakyllReaderOptions defaultHakyllWriterOptions (renderFormulae defaultPandocFormulaOptions)
         >>= saveSnapshot "post-content"
         >>= loadAndApplyTemplate "templates/post.html"    postCtx
         >>= loadAndApplyTemplate "templates/default.html" postCtx
@@ -41,7 +41,7 @@ main = do
 
     match "drafts/*" $ do
       route $ setExtension "html"
-      compile $ pandocCompiler
+      compile $ pandocCompilerWithTransformM defaultHakyllReaderOptions defaultHakyllWriterOptions (renderFormulae defaultPandocFormulaOptions)
         >>= loadAndApplyTemplate "templates/post.html"    postCtx
         >>= loadAndApplyTemplate "templates/default.html" postCtx
         >>= relativizeUrls
