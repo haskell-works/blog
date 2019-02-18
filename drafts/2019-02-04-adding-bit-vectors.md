@@ -221,6 +221,18 @@ sumVector u v carry = DVS.createT $ do
           else return c
 ```
 
+# Benchmarks
+
+$ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchiest
+3.108
+
+$ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchier
+1.330
+
+$ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchless
+1.065
+
+
 # Closing Remarks
 
 This post looked at how we can resegment our lazy bytestring to make the chunk sizes compatible with
