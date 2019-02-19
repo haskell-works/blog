@@ -305,51 +305,69 @@ Now we can use our `sumCarry` function to implement bit-vector
 addition by 
 
 For example we show how to add two bit-vectors `a` and `b` in the following
-diagram
+diagram:
 
 ```text
-                ABCDEFGH   IJKLMNOP   QRSTUVWX   YZαβγδεζ
-               ┌─────────────────────────────────────────
-carry         0│00000000─┬─10000000─┬─10000000─┬─10000000
-a = 128       1│00010001─┤ 00011111─┤ 10001000─┤ 00000000
-b = 128       2│00010001─┘ 11111000─┘ 00011111─┘ 11000000
-a + b         3│00001000   00011000   01010000   00100000
+a = 128 │ 00010001   00011111   10001000   00000000
+b = 128 │ 00010001   11111000   00011111   11000000
+carry   │ 
+a + b   │ 
 ```
 
-Starting in the left-most column, we initialise the carry `0A-0H` to
-`0x00`.  We then compute the sum `3A-3H = 0A-0H + 1A-1H + 2A-2H`.
+First initialise the carry to `0x0`:
 
-This sum can be computed with the `sumCarry` function:
+```text
+a = 128 │ 00010001   00011111   10001000   00000000
+b = 128 │ 00010001   11111000   00011111   11000000
+carry   │ 00000000
+a + b   │ 
+```
 
-The `total` is calculated by adding all three words (`a`, `b`, and `carry`)
-ignoring overflow.  Separately, the `newCarry` is calculated by comparing
-each of the addends to the total.  The reason this works is that adding
-three positive numbers together ought result in a number that is at least
-any one of them.  If this expectation does not hold, we know overflow has
-occurred and therefore the carry is `1`.
+Then perform the addition of the first word and compute
+the next carry with our `sumCarry` function:
 
+```text
+a = 128 │ 00010001─┐ 00011111   10001000   00000000
+b = 128 │ 00010001─┤ 11111000   00011111   11000000
+carry   │ 00000000─┴─10000000
+a + b   │ 00001000
+```
 
-We would like a way to recover the carry bit so that it can be added to the
-next word in the bit vector.
+Notice the `1` bit in the next carry.
 
-Firstly we perform bytewise additions:
+We can then repeat this for the next set of words:
 
-* `6A..6H = 0A..0H + 1A..1H`
-* `6I..6P = 0I..0P + 1I..1P`
-* `6Q..6X = 0Q..0X + 1Q..1X`
-* `6Y..6ζ = 0Y..0ζ + 1Y..1ζ`
+```text
+a = 128 │ 00010001─┐ 00011111─┐ 10001000   00000000
+b = 128 │ 00010001─┤ 11111000─┤ 00011111   11000000
+carry   │ 00000000─┴─10000000─┴─10000000
+a + b   │ 00001000   00011000
+```
 
-Then we compute the carry to be `0x01` if there is an
-overflow or `0x0` otherwise:
+Above we can see the carry bit trigger a series of
+bit flips from the beginning of the word.
 
-* `5I..5P = if overflow (0A..0H + 1A..1H) then 0x01 else 0x00`
-* `5Q..5X = if overflow (0I..0P + 1I..1P) then 0x01 else 0x00`
-* `5Y..5ζ = if overflow (0Q..0X + 1Q..1X) then 0x01 else 0x00`
+We continue again:
 
-The bit-vector sum is then:
+```text
+a = 128 │ 00010001─┐ 00011111─┐ 10001000─┐ 00000000
+b = 128 │ 00010001─┤ 11111000─┤ 00011111─┤ 11000000
+carry   │ 00000000─┴─10000000─┴─10000000─┴─10000000
+a + b   │ 00001000   00011000   01010000
+```
 
-With our branchless `sumCarry4` function, we can define the sume of two vectors
-(with an initial carry) like so:
+And again:
+
+```text
+a = 128 │ 00010001─┐ 00011111─┐ 10001000─┐ 00000000
+b = 128 │ 00010001─┤ 11111000─┤ 00011111─┤ 11000000
+carry   │ 00000000─┴─10000000─┴─10000000─┴─10000000
+a + b   │ 00001000   00011000   01010000   00100000
+```
+
+Until we're done.
+
+The code that implements this follows:
 
 ```haskell
 sumVector :: DVS.Vector Word64 -> DVS.Vector Word64 -> Word64 -> (Word64, DVS.Vector Word64)
@@ -366,6 +384,8 @@ sumVector u v carry = DVS.createT $ do
             go w (i + 1) nc
           else return c
 ```
+
+The `sumVector` function takes the two bit-vectors to add and an initial carry,
 
 # Benchmarks
 
@@ -394,6 +414,6 @@ SIMD instructions at a reasonable cost.
 The next post will look at using FFI to call into C functions that use SIMD to do the heavy lifting.
 
 [1]: ../posts/2018-08-15-data-parallel-rfc-compliant-csv-parsing.html
-[2]: https://github.com/haskell-works/blog-examples/blob/03c30c605fe9b5d3ac933e744e2122b3313b7262/ex-vector/src/Ops/SumBitVectors/Branchiest.hs
-[3]: https://github.com/haskell-works/blog-examples/blob/f966eb5a58310cb768ae25a55f7c0bb0ce82d4b8/ex-vector/src/Ops/SumBitVectors/Branchy.hs
-[4]: https://github.com/haskell-works/blog-examples/blob/master/ex-vector/src/Ops/SumBitVectors/Branchless.hs
+[2]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchiest.hs
+[3]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchy.hs
+[4]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchless.hs
