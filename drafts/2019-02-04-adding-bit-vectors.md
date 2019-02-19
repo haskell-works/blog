@@ -370,19 +370,19 @@ Until we're done.
 The code that implements this follows:
 
 ```haskell
-sumVector :: DVS.Vector Word64 -> DVS.Vector Word64 -> Word64 -> (Word64, DVS.Vector Word64)
-sumVector u v carry = DVS.createT $ do
+sumVector :: DVS.Vector Word64 -> DVS.Vector Word64 -> DVS.Vector Word64
+sumVector u v = DVS.create $ do
   w <- DVSM.new len
-  go w 0 0
-  return (undefined, w)
+  go w 0 False
+  return w
   where len = min (DVS.length u) (DVS.length v)
-        go :: DVSM.MVector s Word64 -> Int -> Word64 -> ST s Word64
+        go :: DVSM.MVector s Word64 -> Int -> Bool -> ST s Word64
         go w i c = if i < len
           then do
             let (t, nc) = sumCarry (DVS.unsafeIndex u i) (DVS.unsafeIndex v i) c
             DVSM.unsafeWrite w i t
             go w (i + 1) nc
-          else return c
+          else return 1
 ```
 
 The `sumVector` function takes the two bit-vectors to add and an initial carry,
