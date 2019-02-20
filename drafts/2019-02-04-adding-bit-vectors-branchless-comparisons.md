@@ -46,7 +46,7 @@ $$carryOut$$:
 ```haskell
 sumCarryIncomplete :: Wor64 -> Wor64 -> (Wor64, Wor64)
 sumCarryIncomplete a b = (partialSum, carryOut)
-  where partialSum  = a + b
+  where partialSum     = a + b
         carryOut       = if partialSum < a || partialSum < b then 1 else 0
 ```
 
@@ -146,8 +146,8 @@ as well ([full source][3]):
 ```haskell
 sumCarry1 :: Wor64 -> Wor64 -> Wor64 -> (Wor64, Wor64)
 sumCarry1 a b carryIn = (partialSum, newCarry)
-  where partialSum     = a + b + carryIn
-        newCarry  = if partialSum < a || partialSum < b || partialSum < carryIn then 1 else 0
+  where partialSum    = a + b + carryIn
+        newCarry      = if partialSum < a || partialSum < b || partialSum < carryIn then 1 else 0
 ```
 
 This results in the following core:
