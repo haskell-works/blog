@@ -79,7 +79,7 @@ We can do better by avoiding the use of `Bool`, which is a [sum type][5].
 
 Using such types are fairly risky in high-performance code because the complexity
 of representing them in memory makes them slow.  Ideally, we would like to
-be able to use them and depend on the compiler to fully optimised away, but
+be able to use them and depend on the compiler to fully optimised them away, but
 this doesn't always happen.
 
 We can see that GHC has failed to optimise away these constants by looking
@@ -95,43 +95,57 @@ stack build --ghc-options="-ddump-simpl -dsuppress-all -dsuppress-coercions"
 The GHC core for `sumCarry0` is reproduced here:
 
 ```haskell
-$wsumCarry0 :: Word64 -> Word64 -> Bool -> (# Word64, Bool #)
-{- Arity: 3, HasNoCafRefs, Strictness: <L,U(U)><L,U(U)><L,U>,
+$waddCarry :: GHC.Word.Word64 -> GHC.Word.Word64 -> GHC.Types.Bool -> (# GHC.Word.Word64, GHC.Types.Bool #)
+{- Arity: 3, HasNoCafRefs, Strictness: <L,U(U)><L,U(U)><L,1*U>,
     Inline: [0],
-    Unfolding: (\ (w :: Word64) (w1 :: Word64) (w2 :: Bool) ->
+    Unfolding: (\ (w :: GHC.Word.Word64)
+                  (w1 :: GHC.Word.Word64)
+                  (w2 :: GHC.Types.Bool) ->
                 let {
-                  partialSum :: Word64
-                  = case w2 of wild {
-                      False
-                      -> case w of wild1 { W64# x# ->
-                        case w1 of wild2 { W64# y# -> W64# (plusWord# x# y#) } }
-                      True
-                      -> case w of wild1 { W64# x# ->
-                        case w1 of wild2 { W64# y# ->
-                        W64# (plusWord# (plusWord# x# y#) 1##) } } }
+                  total :: GHC.Word.Word64
+                  = case w of wild { GHC.Word.W64# x# ->
+                    case w1 of wild1 { GHC.Word.W64# y# ->
+                    GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
                 } in
-                (# partialSum,
-                  case partialSum of wild { W64# x ->
-                  case w of wild1 { W64# y ->
-                  case ltWord# x y of lwild {
+                let {
+                  b :: GHC.Word.Word64
+                  = case w2 of wild {
+                      GHC.Types.False -> Ops.SumBitVectors.Word64.Branchiest.addCarry2
+                      GHC.Types.True -> Ops.SumBitVectors.Word64.Branchiest.addCarry1 }
+                } in
+                let {
+                  total1 :: GHC.Word.Word64
+                  = case total of wild { GHC.Word.W64# x# ->
+                    case b of wild1 { GHC.Word.W64# y# ->
+                    GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
+                } in
+                (# total1,
+                  case total of wild { GHC.Word.W64# x ->
+                  case w of wild1 { GHC.Word.W64# y ->
+                  case GHC.Prim.ltWord# x y of lwild {
                     DEFAULT
-                    -> case w1 of wild2 { W64# y1 ->
-                        case ltWord# x y1 of lwild1 {
+                    -> case w1 of wild2 { GHC.Word.W64# y1 ->
+                        case GHC.Prim.ltWord# x y1 of lwild1 {
                           DEFAULT
-                          -> case w2 of wild3 {
-                              False -> False
-                              True -> tagToEnum# @ Bool (ltWord# x 1##) }
-                          1# -> True } }
-                    1# -> True } } } #)) -}
+                          -> case total1 of wild3 { GHC.Word.W64# x1 ->
+                            case GHC.Prim.ltWord# x1 x of lwild2 {
+                              DEFAULT
+                              -> case b of wild4 { GHC.Word.W64# y2 ->
+                                  GHC.Prim.tagToEnum# @ GHC.Types.Bool (GHC.Prim.ltWord# x1 y2) }
+                              1# -> GHC.Types.True } }
+                          1# -> GHC.Types.True } }
+                    1# -> GHC.Types.True } } } #)) -}
 ```
 
-From the dump, we can see the use of `True` and `False` values on lines `8`,
-`11`, `25`, and `26`.
+We can see from the above dump that the `addCarry` function has nicely inlined away
+all the calls to `add`.  We can also observe the use of `True` and `False` on lines
+ values on lines `16`, `17`, `38`, `39`, and `40`.
 
 Moreover, we can count the number of branch instructions
 in the core by looking at `case` statements that have at least two branches.
-These can be identified on lines  `7`, `19`, `22`, and `24`, adding up to `4`
-branches in partialSum.
+
+Such case statements can be identified on lines `15`, `28`, `31`, and `34`,
+adding up to `4` branches in `addCarry`.
 
 We can avoid the use of the inefficient data type by replacing `Bool` with `Word64`,
 `True` with `1` and `False` with `0`.
@@ -141,193 +155,126 @@ to component the $$partialSum$$, so we can expect also the avoid one of the bran
 as well ([full source][3]):
 
 ```haskell
-sumCarry1 :: Wor64 -> Wor64 -> Wor64 -> (Wor64, Wor64)
-sumCarry1 a b carryIn = (partialSum, newCarry)
-  where partialSum    = a + b + carryIn
-        newCarry      = if partialSum < a || partialSum < b || partialSum < carryIn then 1 else 0
+add :: Word64 -> Word64 -> (Word64, Word64)
+add a b = (total, newCarry)
+  where total     = a + b
+        newCarry  = if total < a || total < b then 1 else 0
+
+addCarry :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
+addCarry a b c = (t, carry0 .|. carry1)
+  where (s, carry0) = add a b
+        (t, carry1) = add s c
 ```
 
 This results in the following core:
 
 ```haskell
-$wsumCarry
-  = \ w_smut w1_smuu w2_smuv ->
-      let {
-        partialSum_sk3O
-        partialSum_sk3O
-          = case w_smut of { W64# x#_aj6l ->
-            case w1_smuu of { W64# y#_aj6p ->
-            case w2_smuv of { W64# y#1_Xjkx ->
-            W64# (plusWord# (plusWord# x#_aj6l y#_aj6p) y#1_Xjkx)
-            }
-            }
-            } } in
-      (# partialSum_sk3O,
-         case partialSum_sk3O of { W64# x_aj6G ->
-         case w_smut of { W64# y_aj6K ->
-         case ltWord# x_aj6G y_aj6K of {
-           __DEFAULT ->
-             case w1_smuu of { W64# y1_XjaA ->
-             case ltWord# x_aj6G y1_XjaA of {
-               __DEFAULT ->
-                 case w2_smuv of { W64# y2_XjaJ ->
-                 case ltWord# x_aj6G y2_XjaJ of {
-                   __DEFAULT -> sumCarry2;
-                   1# -> sumCarry1
-                 }
-                 };
-               1# -> sumCarry1
-             }
-             };
-           1# -> sumCarry1
-         }
-         }
-         } #)
+  $waddCarry ::
+    GHC.Word.Word64
+    -> GHC.Word.Word64
+    -> GHC.Word.Word64
+    -> (# GHC.Word.Word64, GHC.Word.Word64 #)
+  {- Arity: 3, HasNoCafRefs, Strictness: <L,U(U)><L,U(U)><L,U(U)>,
+     Inline: [0],
+     Unfolding: (\ (w :: GHC.Word.Word64)
+                   (w1 :: GHC.Word.Word64)
+                   (w2 :: GHC.Word.Word64) ->
+                 let {
+                   total :: GHC.Word.Word64
+                   = case w of wild { GHC.Word.W64# x# ->
+                     case w1 of wild1 { GHC.Word.W64# y# ->
+                     GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
+                 } in
+                 let {
+                   total1 :: GHC.Word.Word64
+                   = case total of wild { GHC.Word.W64# x# ->
+                     case w2 of wild1 { GHC.Word.W64# y# ->
+                     GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
+                 } in
+                 (# total1,
+                    case total of wild { GHC.Word.W64# x ->
+                    case w of wild1 { GHC.Word.W64# y ->
+                    let {
+                      $j :: GHC.Prim.Word# -> GHC.Word.Word64
+                        <join 1> {- Arity: 1, Strictness: <S,U>m -}
+                      = \ (x# :: GHC.Prim.Word#)[OneShot] ->
+                        case total1 of wild2 { GHC.Word.W64# x1 ->
+                        case GHC.Prim.ltWord# x1 x of lwild {
+                          DEFAULT
+                          -> case w2 of wild3 { GHC.Word.W64# y1 ->
+                             case GHC.Prim.ltWord# x1 y1 of lwild1 {
+                               DEFAULT -> GHC.Word.W64# x#
+                               1# -> GHC.Word.W64# (GHC.Prim.or# x# 1##) } }
+                          1# -> GHC.Word.W64# (GHC.Prim.or# x# 1##) } }
+                    } in
+                    case GHC.Prim.ltWord# x y of lwild {
+                      DEFAULT
+                      -> case w1 of wild2 { GHC.Word.W64# y1 ->
+                         case GHC.Prim.ltWord# x y1 of lwild1 {
+                           DEFAULT -> $j 0## 1# -> $j 1## } }
+                      1# -> $j 1## } } } #)) -}
 ```
 
-The core shows three branching `case` expressions on lines `16`, `19` and `22`.
+The core shows three branching `case` expressions on lines `31`, `34` and `39`.
 
-Assuming we have all the additional code necessary to call our function and
-perform the bit-vector addition (to be described later in
-[Adding bit-vectors](#adding-bit-vectors)), let's see how this performs:
+Let's see how this performs:
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchy
 1.334
 ```
 
-That works out to be a performance boost of about `57%`.
+That works out to be a performance boost of about `63.7%`.
 
-# A little refactoring
+# Branchless tests
 
 We can do a little bit better by further trying to reduce the number of branches
 in our code.
 
-But before we can do that we're going to explore a bit of refactoring.
-
-Our earlier implementation detects when an overflow has happened by using the
-following test $$partialSum < a \lor partialSum < b \lor partialSum < carryIn$$.
-
-We might have tried the alternative more intuitive test of
-$$partialSum < a + b + carryIn$$ instead, but sadly that does not
-work because as mentioned earlier, we lose the carry bit.
-
-We can however make the observation that unconstrained by word sizes, the test
-is valid and we can use this to derive an alternative test that also works.
-
-Jumping back to our first implementation the expression
-$$partialSum < a \lor partialSum < b \lor partialSum < carryIn$$
-can be rewritten as $$partialSum < a \verb+ max + b \verb+ max + carryIn$$,
-where $$\verb+max+$$ is a function that
-returns the largest argument.  That is to say, the
-partialSum is less than any of the other numbers if the partialSum is less than the largest
-of them.
-
-We now have two different expressions that test for overflow:
-
-* $$partialSum < a \verb+ max + b \verb+ max + carryIn$$
-* $$partialSum < a + b + carryIn$$
-
-We can then make the observation that the following inequality holds:
-
-$$a \verb+ max + b \verb+ max + carryIn \leq a + b + carryIn$$
-
-Despite them both being valid tests for overflow, they are not necessarily
-equal.  For example when any of the values $$a$$, $$b$$ or $$carryIn$$ differ
-from each other then the expressions are not equal, but in this case, the
-left is less than the right.
-
-We can then devise a simpler expression that we can prove evaluates to a result
-that lies between the two extremes and being bounded by those other expression
-means that it also constitutes a valid test for overflow.
-
-$$a \lor b \lor carryIn$$ is one such expression.
-
-This means the following inequality should hold:
-
-$$a \verb+ max + b \verb+ max + carryIn \leq a \lor b \lor carryIn \leq a + b + carryIn$$
-
-We know the left inequality is true because the largest addend ORed with
-any other number will be at least the value of the largest addend.
-
-We know the right inequality to be true because we can consider two
-cases.  If there is no overlap in the bit patterns of the addends then
-the LHS and the RHS end up being equal.  If there is overlap, then the LHS
-is conceptually like a sum that has lost those bits where there is overlap
-in one of the registers, resulting in a value smaller than that given by an
-actual addition.
-
-We can therefore substitute the following test instead which has
-fewer instructions: $$partialSum < a \lor b \lor carryIn$$
-
-This results in the following implementation:
+Let's zoom in to a smaller section of the core we saw before:
 
 ```haskell
-sumCarry2 :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
-sumCarry2 a b carryIn = (partialSum, carryOut)
-  where partialSum  = a + b + carryIn
-        carryOut    = if partialSum < a .|. b .|. carryIn then 1 else 0
+  (# total1,
+    case total of wild { GHC.Word.W64# x ->
+    case w of wild1 { GHC.Word.W64# y ->
+    let {
+      $j :: GHC.Prim.Word# -> GHC.Word.Word64
+        <join 1> {- Arity: 1, Strictness: <S,U>m -}
+      = \ (x# :: GHC.Prim.Word#)[OneShot] ->
+        case total1 of wild2 { GHC.Word.W64# x1 ->
+        case GHC.Prim.ltWord# x1 x of lwild {
+          DEFAULT
+          -> case w2 of wild3 { GHC.Word.W64# y1 ->
+              case GHC.Prim.ltWord# x1 y1 of lwild1 {
+                DEFAULT -> GHC.Word.W64# x#
+                1# -> GHC.Word.W64# (GHC.Prim.or# x# 1##) } }
+          1# -> GHC.Word.W64# (GHC.Prim.or# x# 1##) } }
+    } in
+    case GHC.Prim.ltWord# x y of lwild {
+      DEFAULT
+      -> case w1 of wild2 { GHC.Word.W64# y1 ->
+          case GHC.Prim.ltWord# x y1 of lwild1 {
+            DEFAULT -> $j 0## 1# -> $j 1## } }
+      1# -> $j 1## } } } #)) -}
 ```
 
-In practise the impact of reducing the implementation by two instructions
-is too small to make an observable difference.
+On lines `9`, `12` and `20` are mysterious calls to a function called `ltWord#`.
 
-But the latter technique is used in the [`hw-dsv`][6] library, so it
-needed some explanation.
-
-Unfortunately both version involve an `if` statement and on modern CPU
-architectures because of pipelining, there is a performance penalty for
-these kinds of branches.  We would like to be able to avoid them if we
-can.
-
-# Branchless tests
-
-Let's look back a snippet of core from the previous dump:
-
-```haskell
-  case ltWord# x_aj6G y_aj6K of {
-    __DEFAULT ->
-      case w1_smuu of { W64# y1_XjaA ->
-      case ltWord# x_aj6G y1_XjaA of {
-        __DEFAULT ->
-          case w2_smuv of { W64# y2_XjaJ ->
-          case ltWord# x_aj6G y2_XjaJ of {
-            __DEFAULT -> sumCarry2;
-            1# -> sumCarry1
-          }
-          };
-        1# -> sumCarry1
-      }
-      };
-    1# -> sumCarry1
-```
-
-One line `1`, we can see our `sumCarry1` is calling an `ltWord#` function that does
-not exist in our definition.  This is because the `(<)` operator we do use calls
-`ltWord#` and GHC has inlined our use of the operator.
-
-The `ltWord#` function is actually what we call a primop.  A special function that
+The `ltWord#` function is actually what we call a primop:  A special function that
 is implemented internally by GHC.  The `ltWord#` primop behaves like `(<)` except
-that it will return `1` instead of `True` and `0` instead of `False`.
+that it will return `1#` instead of `True` and `0#` instead of `False`.
 
-Let's check out its type:
-
-```bash
-$ stack repl ex-vector:exe:ex-vector
-λ> :set -XMagicHash
-λ> import GHC.Prim
-λ> :t ltWord#
-ltWord# :: Word# -> Word# -> Int#
-```
+We can find the this function in the [docs][7] as having the type `Word# -> Word# -> Int#`
 
 Notice that the primop uses the types `Word#` and `Int#`.  These are
-[unboxed values][6], these types have less overhead than the boxed types
+[unboxed values][6].  These types have less overhead than the boxed types
 like `Word64` or `Bool`, and GHC will optimise boxed types to unboxed types
 when it believes it can safely do so.
 
-What we would like to do is to use the return value of `ltWord#` directly
-rather than test on the result and use values that are going to end up the
-same anyway.
+Our performance problem lies in the fact that we whenever our compiled code calls
+`ltWord#` it tests against the return value for `DEFAULT` (ie. `0#`) and `1#`, whereas
+if we recognised that it was an integer and used it in arithmetic directly, we can
+avoid the branch.
 
 But because it uses unboxed types, calling it directly would be inconvenient
 so we write a wrapper that uses boxed types and depend on GHC to optimise
@@ -345,38 +292,30 @@ ltWord (W64# a#) (W64# b#) = fromIntegral (I64# (ltWord# a# b#))
 ```
 
 Notice the type signature we've chosen to use, which is
-`Word64 -> Word64 -> Word64` instead of `Word64 -> Word64 -> Bool`.
+`Word64 -> Word64 -> Word64` instead of the `Word64 -> Word64 -> Bool`
+of the `(<)` operator.
 
-Such tests are called branchless comparisons.
+Such tests are called branchless comparisons because a branch is not
+required to use the result of the comparison.
 
-We can then define a version of `sumCarry3`, the moral equivalent of `sumCarry1`
+We can then define a version of `add`, the moral equivalent of `sumCarry1`
 except without an `if` statement:
 
 ```haskell
-sumCarry3 :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
-sumCarry3 a b carryIn = (partialSum, carryOut)
-  where prePartialSum = a + b
-        partialSum    = prePartialSum + carryIn
-        carryOut      = partialSum `ltWord` (a .|. b .|. carryIn)
+add :: Word64 -> Word64 -> (Word64, Word64)
+add a b = (total, newCarry)
+  where total     = a + b
+        newCarry  = total `ltWord` a || total `ltWord` b
 ```
 
-Or alternatively a `sumCarry4`, the moral equivalent of `sumCarry2`, which has
-fewer instructions.
-
-```haskell
-sumCarry3 :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
-sumCarry3 a b carryIn = (partialSum, carryOut)
-  where prePartialSum = a + b
-        partialSum    = prePartialSum + carryIn
-        carryOut      = partialSum `ltWord` (a .|. b .|. carryIn)
-```
-
-This optimisation shaves another `8.5%` of the runtime bringing the savings to a partialSum of `66.7%`.
+Running this version of the code yields run in less time again:
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchless
 1.005
 ```
+
+This optimisation shaves another `9.0%` of the runtime bringing the savings to a partialSum of `72.6%`.
 
 # Closing Remarks
 
@@ -418,3 +357,4 @@ The source code for the above benchmarks can be found in the
 [4]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchless.hs
 [5]: https://wiki.haskell.org/Algebraic_data_type
 [6]: https://wiki.haskell.org/Unboxed_type
+[7]: https://hackage.haskell.org/package/ghc-prim-0.5.3/docs/GHC-Prim.html#v:ltWord-35-
