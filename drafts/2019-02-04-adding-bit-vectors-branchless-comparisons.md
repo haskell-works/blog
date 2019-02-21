@@ -44,8 +44,8 @@ This allows us to write a function that returns both the $$partialSum$$ and the
 $$carryOut$$:
 
 ```haskell
-sumCarryIncomplete :: Wor64 -> Wor64 -> (Wor64, Wor64)
-sumCarryIncomplete a b = (partialSum, carryOut)
+add :: Wor64 -> Wor64 -> (Wor64, Bool)
+add a b = (partialSum, carryOut)
   where partialSum     = a + b
         carryOut       = if partialSum < a || partialSum < b then 1 else 0
 ```
@@ -54,26 +54,23 @@ This is fine for adding the first two words in our bit-vector, but the addition
 of following pairs of words will need to incorporate the carry.  This ends up
 being a threeway addition that includes an input carry.
 
-We should therefore extend the function to take $$carryIn$$ as an `Bool` argument
-so that it can also be added to the result ([full source][2]):
+We can write another function `addCarry` to perform a threeway addition ([full source][2]).
 
 ```haskell
-sumCarry0 :: Word64 -> Word64 -> Bool -> (Word64, Bool)
-sumCarry0 a b carryIn = (partialSum, carryOut)
-  where prePartialSum = a + b
-        partialSum    = if carryIn then prePartialSum + 1 else prePartialSum
-        carryOut      = partialSum < a || partialSum < b || (carryIn && partialSum < 1)
+addCarry :: Word64 -> Word64 -> Bool -> (Word64, Bool)
+addCarry a b c = (t, carry0 || carry1)
+  where (s, carry0) = add a b
+        (t, carry1) = add s (if c then 1 else 0)
 ```
 
-This means that instead of relying on $$partialSum < a \lor partialSum < b$$ we will
-need to rely on $$partialSum < a \lor partialSum < b \lor partialSum < carryIn$$ as a reliable
-test for overflow, which fortunately still works.
+`addCarry` is implemented by calling `add` to add the first two numbers and then
+converting the carry to a `1` or `0` and adding that in also.
 
 Running this code shows that it takes `3.1 seconds` to run, which is fairly slow:
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchiest
-3.108
+3.674
 ```
 
 # First optimisation: Avoiding Bool
@@ -196,7 +193,7 @@ perform the bit-vector addition (to be described later in
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchy
-1.330
+1.334
 ```
 
 That works out to be a performance boost of about `57%`.
@@ -378,7 +375,7 @@ This optimisation shaves another `8.5%` of the runtime bringing the savings to a
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchless
-1.065
+1.005
 ```
 
 # Closing Remarks
@@ -401,31 +398,23 @@ to retain the safety that immutability affords.
 
 ```bash
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchiest
-3.108
+3.674
 
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchy
-1.330
+1.334
 
 $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-json/corpus/bench/78mb.json --branchiness branchless
-1.065
+1.005
 ```
 
 The source code for the above benchmarks can be found in the
-[Branchiest](https://github.com/haskell-works/blog-examples/blob/master/ex-vector/src/Ops/SumBitVectors/Branchiest.hs),
-[Brancy](https://github.com/haskell-works/blog-examples/blob/master/ex-vector/src/Ops/SumBitVectors/Branchy.hs), and
-[Branchless](https://github.com/haskell-works/blog-examples/blob/master/ex-vector/src/Ops/SumBitVectors/Branchless.hs)
-modules.
+[Branchiest][2], [Branchy][3], and [Branchless][4] modules.
 
-# Closing Remarks
-
-This post looked at how we can resegment our lazy bytestring to make the chunk sizes compatible with
-SIMD instructions at a reasonable cost.
-
-The next post will look at using FFI to call into C functions that use SIMD to do the heavy lifting.
+# References
 
 [1]: ../posts/2018-08-15-data-parallel-rfc-compliant-csv-parsing.html
-[2]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchiest.hs
-[3]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchy.hs
-[4]: https://github.com/haskell-works/blog-examples/blob/dd02285e7ab791ec1d294cedd8affd774835ebbc/ex-vector/src/Ops/SumBitVectors/Branchless.hs
+[2]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchiest.hs
+[3]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchy.hs
+[4]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchless.hs
 [5]: https://wiki.haskell.org/Algebraic_data_type
 [6]: https://wiki.haskell.org/Unboxed_type
