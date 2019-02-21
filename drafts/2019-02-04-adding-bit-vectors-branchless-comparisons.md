@@ -13,7 +13,7 @@ Examples in this post will work with examples that use vectors of `Word8` in
 order to be concise in the explanation, whereas the real implementation will
 use vectors of `Word64` for efficiency.
 
-As per usual, words when expressed in binary form are expressed in Little Endian.
+As per usual, `Word`s when expressed in binary form are expressed in [Little Endian][8].
 
 # Overflows
 
@@ -38,16 +38,16 @@ and an overflow also results in a truncated value that is smaller than at least
 one of the addends.
 
 We can therefore determine whether the carry bit should be set by testing for the
-latter condition: $$partialSum < a \lor partialSum < b$$
+latter condition: $$total < a \lor total < b$$
 
-This allows us to write a function that returns both the $$partialSum$$ and the
-$$carryOut$$:
+This allows us to write a function that returns both the $$total$$ and the
+$$carry$$:
 
 ```haskell
 add :: Wor64 -> Wor64 -> (Wor64, Bool)
-add a b = (partialSum, carryOut)
-  where partialSum     = a + b
-        carryOut       = if partialSum < a || partialSum < b then 1 else 0
+add a b = (total, carry)
+  where total = a + b
+        carry = if total < a || total < b then 1 else 0
 ```
 
 This is fine for adding the first two words in our bit-vector, but the addition
@@ -83,7 +83,7 @@ be able to use them and depend on the compiler to fully optimised them away, but
 this doesn't always happen.
 
 We can see that GHC has failed to optimise away these constants by looking
-at GHC core, which is an intermediate representation used by the compiler
+at GHC core.  GHC core is an intermediate representation used by the compiler
 for things such as optimisation.
 
 We can instruct GHC to emit GHC core by invoking it with additional flags:
@@ -92,7 +92,7 @@ We can instruct GHC to emit GHC core by invoking it with additional flags:
 stack build --ghc-options="-ddump-simpl -dsuppress-all -dsuppress-coercions"
 ```
 
-The GHC core for `sumCarry0` is reproduced here:
+The GHC core for `addCarry` is reproduced here:
 
 ```haskell
 $waddCarry :: GHC.Word.Word64 -> GHC.Word.Word64 -> GHC.Types.Bool -> (# GHC.Word.Word64, GHC.Types.Bool #)
@@ -151,7 +151,7 @@ We can avoid the use of the inefficient data type by replacing `Bool` with `Word
 `True` with `1` and `False` with `0`.
 
 This simple change also allows us to avoid the `if` expression previously used
-to component the $$partialSum$$, so we can expect also the avoid one of the branches
+to component the $$total$$, so we can expect also the avoid one of the branches
 as well ([full source][3]):
 
 ```haskell
@@ -161,10 +161,17 @@ add a b = (total, newCarry)
         newCarry  = if total < a || total < b then 1 else 0
 
 addCarry :: Word64 -> Word64 -> Word64 -> (Word64, Word64)
-addCarry a b c = (t, carry0 .|. carry1)
+addCarry a b c = (t, carry0 + carry1)
   where (s, carry0) = add a b
         (t, carry1) = add s c
 ```
+
+Notice in particular that the `carry0 || carry1` became `carry0 + carry1`
+rather than `carry0 .|. carry1`.
+
+This is to ensure that `addCarry` behaves correctly for all possible
+inputs even though we never use a value of `c` other than `1` or `0`,
+under which circumstances either would work.
 
 This results in the following core:
 
@@ -215,7 +222,7 @@ This results in the following core:
                       1# -> $j 1## } } } #)) -}
 ```
 
-The core shows three branching `case` expressions on lines `31`, `34` and `39`.
+The core shows now three branching `case` expressions on lines `31`, `34` and `39`.
 
 Let's see how this performs:
 
@@ -264,7 +271,7 @@ The `ltWord#` function is actually what we call a primop:  A special function th
 is implemented internally by GHC.  The `ltWord#` primop behaves like `(<)` except
 that it will return `1#` instead of `True` and `0#` instead of `False`.
 
-We can find the this function in the [docs][7] as having the type `Word# -> Word# -> Int#`
+We can find this function in the [docs][7] as having the type `Word# -> Word# -> Int#`
 
 Notice that the primop uses the types `Word#` and `Int#`.  These are
 [unboxed values][6].  These types have less overhead than the boxed types
@@ -276,8 +283,8 @@ Our performance problem lies in the fact that we whenever our compiled code call
 if we recognised that it was an integer and used it in arithmetic directly, we can
 avoid the branch.
 
-But because it uses unboxed types, calling it directly would be inconvenient
-so we write a wrapper that uses boxed types and depend on GHC to optimise
+But because `ltWord#` has unboxed types in its signature, calling it directly would be
+inconvenient so we write a wrapper that uses boxed types and depend on GHC to optimise
 away our pessimisation:
 
 ```haskell
@@ -291,15 +298,14 @@ ltWord :: Word64 -> Word64 -> Word64
 ltWord (W64# a#) (W64# b#) = fromIntegral (I64# (ltWord# a# b#))
 ```
 
-Notice the type signature we've chosen to use, which is
+Notice the type signature we've chosen to use is
 `Word64 -> Word64 -> Word64` instead of the `Word64 -> Word64 -> Bool`
 of the `(<)` operator.
 
 Such tests are called branchless comparisons because a branch is not
 required to use the result of the comparison.
 
-We can then define a version of `add`, the moral equivalent of `sumCarry1`
-except without an `if` statement:
+We can then define a version of `add` without an `if` statement:
 
 ```haskell
 add :: Word64 -> Word64 -> (Word64, Word64)
@@ -308,6 +314,42 @@ add a b = (total, newCarry)
         newCarry  = total `ltWord` a || total `ltWord` b
 ```
 
+Looking at the resulting core we see:
+
+```haskell
+$waddCarry :: GHC.Word.Word64 -> GHC.Word.Word64 -> GHC.Word.Word64 -> (# GHC.Word.Word64, GHC.Word.Word64 #)
+{- Arity: 3, HasNoCafRefs, Strictness: <L,U(U)><L,U(U)><L,U(U)>,
+    Inline: [0],
+    Unfolding: (\ (w :: GHC.Word.Word64)
+                  (w1 :: GHC.Word.Word64)
+                  (w2 :: GHC.Word.Word64) ->
+                let {
+                  total :: GHC.Word.Word64
+                  = case w of wild { GHC.Word.W64# x# ->
+                    case w1 of wild1 { GHC.Word.W64# y# ->
+                    GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
+                } in
+                let {
+                  total1 :: GHC.Word.Word64
+                  = case total of wild { GHC.Word.W64# x# ->
+                    case w2 of wild1 { GHC.Word.W64# y# ->
+                    GHC.Word.W64# (GHC.Prim.plusWord# x# y#) } }
+                } in
+                (# total1,
+                  case total of wild { GHC.Word.W64# a# ->
+                  case w of wild1 { GHC.Word.W64# x# ->
+                  case w1 of wild2 { GHC.Word.W64# y# ->
+                  case total1 of wild3 { GHC.Word.W64# a#1 ->
+                  case w2 of wild4 { GHC.Word.W64# y#1 ->
+                  GHC.Word.W64#
+                    (GHC.Prim.or#
+                        (GHC.Prim.int2Word# (GHC.Prim.ltWord# a# (GHC.Prim.or# x# y#)))
+                        (GHC.Prim.int2Word#
+                          (GHC.Prim.ltWord# a#1 (GHC.Prim.or# a# y#1)))) } } } } } #)) -}
+```
+
+And we are happy to find that all the branches are gone.
+
 Running this version of the code yields run in less time again:
 
 ```bash
@@ -315,15 +357,85 @@ $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-j
 1.005
 ```
 
-This optimisation shaves another `9.0%` of the runtime bringing the savings to a partialSum of `72.6%`.
+This optimisation shaves another modest `9.0%` of the runtime bringing the savings to a total of `72.6%`.
+
+# A little refactoring
+
+Whilst we're here, I would like to mention there is another possible
+implementation of the `add` function.
+
+Until now, we've detected when an overflow has happened by using the
+following test $$total < a \lor total < b$$.
+
+We might have tried the alternative more intuitive test of
+$$total < a + b$$ instead, but sadly that does not
+work because as mentioned earlier, we lose the carry bit.
+
+We can however make the observation that unconstrained by word sizes, the test
+is valid and we can use this to derive an alternative test that also works.
+
+Jumping back to our first implementation the expression $$total < a \lor total < b$$
+can be rewritten as $$total < a \verb+ max + b$$, where $$\verb+max+$$ is a function
+that returns the largest argument.  That is to say, the total is less than any of the
+other numbers if the total is less than the largest of them.
+
+We now have two different expressions that test for overflow:
+
+* $$total < a \verb+ max + b$$
+* $$total < a + b$$
+
+We can then make the observation that the following inequality holds:
+
+$$a \verb+ max + b \leq a + b$$
+
+Despite them both being valid tests for overflow, they are not necessarily
+equal.  For example when any of the values $$a$$ or $$b$$ differ
+from each other then the expressions are not equal, but in this case, the
+left is less than the right.
+
+We can then devise a simpler expression that we can prove evaluates to a result
+that lies between the two extremes and being bounded by those other expression
+means that it also constitutes a valid test for overflow.
+
+$$a \lor b$$ is one such expression.
+
+This means the following inequality should hold:
+
+$$a \verb+ max + b \leq a \lor b \leq a + b$$
+
+We know the left inequality is true because the largest addend ORed with
+any other number will be at least the value of the largest addend.
+
+We know the right inequality to be true because we can consider two
+cases.  If there is no overlap in the bit patterns of the addends then
+the LHS and the RHS end up being equal.  If there is overlap, then the LHS
+is conceptually like a sum that has lost those bits where there is overlap
+in one of the registers, resulting in a value smaller than that given by an
+actual addition.
+
+We can therefore substitute the following test instead which has
+fewer instructions: $$total < a \lor b$$
+
+This results in the following implementation:
+
+```haskell
+add :: Word64 -> Word64 -> (Word64, Word64)
+add a b = (total, newCarry)
+  where total     = a + b
+        newCarry  = total `ltWord` (a .|. b)
+```
+
+In practise the impact of reducing the implementation by this many instructions
+is negligable, but the latter technique is used in the [`hw-dsv`][6] library, so it
+needed some explanation.
 
 # Closing Remarks
 
-In this blog post implemented the `sumCarry` and explored different implementations and
+In this blog post implemented the `addCarry` and explored different implementations and
 evaluated various optimisation strategies such uses avoiding the boxed type `Bool`
 and using branchless comparisons to reduce the number of branches in the optimised code.
 
-All that remains in order to perform a bit-vector addition is to invoke the `sumCarry`
+All that remains in order to perform a bit-vector addition is to invoke the `addCarry`
 function over all the words in the intput bit-vectors, ensuring that carries are
 propagated properly between adjacent additions.
 
@@ -349,12 +461,14 @@ $ time ex-vector sum-bit-vectors -i ../hw-json/corpus/bench/78mb.json -i ../hw-j
 The source code for the above benchmarks can be found in the
 [Branchiest][2], [Branchy][3], and [Branchless][4] modules.
 
+
 # References
 
 [1]: ../posts/2018-08-15-data-parallel-rfc-compliant-csv-parsing.html
-[2]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchiest.hs
-[3]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchy.hs
-[4]: https://github.com/haskell-works/blog-examples/blob/99b45428f43e7428383cbe4e4f1d53c38cd830d0/ex-vector/src/Ops/SumBitVectors/Word64/Branchless.hs
+[2]: https://github.com/haskell-works/blog-examples/blob/f2d3024960cc1645078a5952dfbf70d62a21b480/ex-vector/src/Ops/SumBitVectors/Word64/Branchiest.hs
+[3]: https://github.com/haskell-works/blog-examples/blob/f2d3024960cc1645078a5952dfbf70d62a21b480/ex-vector/src/Ops/SumBitVectors/Word64/Branchy.hs
+[4]: https://github.com/haskell-works/blog-examples/blob/f2d3024960cc1645078a5952dfbf70d62a21b480/ex-vector/src/Ops/SumBitVectors/Word64/Branchless.hs
 [5]: https://wiki.haskell.org/Algebraic_data_type
 [6]: https://wiki.haskell.org/Unboxed_type
 [7]: https://hackage.haskell.org/package/ghc-prim-0.5.3/docs/GHC-Prim.html#v:ltWord-35-
+[8]: https://en.wikipedia.org/wiki/Endianness
