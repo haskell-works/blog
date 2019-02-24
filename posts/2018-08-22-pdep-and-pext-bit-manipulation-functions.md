@@ -341,8 +341,8 @@ All the conceptual pieces needed to produce the necessary rank-select bit-string
 for our high-performance RFC compliant CSV parser and pieces need to subsequently
 traverse the CSV text and extract interesting data have been described.
 
-In my next post I will talk about how SIMD instructions can be used to make
-our parser go even faster!
+In my next post I will talk about [how SIMD instructions can be used to make
+our parser go even faster][15]!
 
 Stay tuned!
 
@@ -360,3 +360,4 @@ Stay tuned!
 [12]: https://phabricator.haskell.org/D4236
 [13]: http://hackage.haskell.org/package/ghc-prim-0.5.2.0/docs/src/GHC.Prim.html#ctz64%23
 [14]: https://github.com/haskell-works/bits-extra
+[15]: ../posts/2018-09-03-simd-with-linecount.html
