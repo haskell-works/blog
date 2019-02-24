@@ -219,7 +219,9 @@ to this discussion go to section 3.2 "Fast x86 rank and select", which describes
 
 The formula for rank is given in the paper as:
 
-![Rank in terms of Population Count](../images/x86-rank.png)
+<blockquote>
+$$RANK(v, i) = POPCOUNT(v \& (2^i - 1))$$
+</blockquote>
 
 The `rank i` of a bit-string is the prefix-sum of the bit-string of the given length `i`.
 
@@ -242,14 +244,16 @@ all the 1-bits annotated by `*` (d) and becomes our rank (e).
 (e)      1                 1                 2                 2                 3
 ```
 
-![Select in terms of Parallel Deposit](../images/x86-select.png)
+<blockquote>
+  $$SELECT(v, i) = TZCNT(PDEP(2^i, v))$$
+</blockquote>
 
 The `select i` of a bit-string is length of the smallest prefix that includes `i` 1-bits
 in the bit-string.  Unfortunately, I feel like there is an off-by-one error in the formula
 and that it should actually be:
 
 <blockquote>
-`select(v, i) = tzcnt(pdep(2`<sup>`i-1`</sup>`)) + 1`
+  $$select(v, i) = tzcnt(pdep(2^{i-1})) + 1$$
 </blockquote>
 
 The diagram below shows five examples of select operations on the same bit-string (b).
