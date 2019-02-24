@@ -303,8 +303,8 @@ Unfortunately, GHC does not have native support for the SIMD instructions
 we need.
 
 In a future post I'll look at using these SIMD from GHC using Foreign
-Function Interface (FFI) and addressing some of the challenges of using
-SIMD with Haskell's lazy IO.
+Function Interface (FFI) and addressing some of the [challenges of using
+SIMD with Haskell's lazy IO][9].
 
 [1]: ../posts/2018-08-08-data-parallel-rank-select-bit-string-construction.html
 [2]: https://software.intel.com/sites/landingpage/IntrinsicsGuide/#expand=765,767,802,766&text=_mm256_cmpeq_epi8
@@ -314,4 +314,4 @@ SIMD with Haskell's lazy IO.
 [6]: https://software.intel.com/sites/landingpage/IntrinsicsGuide/#expand=765,767,802,4676&text=_mm256_set1_epi8
 [7]: https://github.com/haskell-works/blog-examples/tree/3f65f1d6c4dac274e57b9ddcf4c610d321fb3234/linecount
 [8]: https://github.com/haskell-works/blog-examples/commit/3f65f1d6c4dac274e57b9ddcf4c610d321fb3234
-
+[9]: ../posts/2018-09-21-rechunking-lazy-bytestrings.html
