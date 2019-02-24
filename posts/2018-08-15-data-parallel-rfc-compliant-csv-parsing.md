@@ -304,4 +304,6 @@ exits:    00000000000000010001000000010000001
 
 Without this, all things fall apart.
 
-But do not fear.  Next week, I will explain how to pull this off.  Stay tuned!
+But do not fear.  Next week, I will [explain how to pull this off][1].  Stay tuned!
+
+[1]: ../posts/2018-08-22-pdep-and-pext-bit-manipulation-functions.html#splitting-a-bit-string-to-odd-and-even-bits
