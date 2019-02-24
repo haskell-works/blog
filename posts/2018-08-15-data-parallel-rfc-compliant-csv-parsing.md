@@ -302,8 +302,12 @@ enters:   00000000000001001000010000000100000
 exits:    00000000000000010001000000010000001
 ```
 
-Without this, all things fall apart.
+Futhermore, we will need a way to efficient add two bit-strings together.
 
-But do not fear.  Next week, I will [explain how to pull this off][1].  Stay tuned!
+Without these things, all things fall apart.
+
+But do not fear.  There will be a follow up post on [how to split bit-vectors into odd and
+even bits][1] and [how to add bit-vectors together][2].  Stay tuned!
 
 [1]: ../posts/2018-08-22-pdep-and-pext-bit-manipulation-functions.html#splitting-a-bit-string-to-odd-and-even-bits
+[2]: ../posts/2019-02-22-adding-bit-vectors-branchless-comparisons.html
