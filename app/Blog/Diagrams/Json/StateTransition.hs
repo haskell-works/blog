@@ -33,22 +33,21 @@ orbit v b a = a <> juxtapose v (a # scale (norm v)) b
 diaStateTransition :: Diagram B
 diaStateTransition = vsep 200
   [ hsep 200
-    [ circle 80
+    [ (circle 80 <> text "J")
       # center
-      # named "A"
-      # showEnvelope' (with & ePoints .~ 360)
-      # showOrigin
+      # named "J"
       # orbit (unitX # rotateBy (2/6) # scale 2.2) (text "Hello worlds" # fontSize (normalized 0.05))
-    , circle 80 # named "B"
+    , (circle 80 <> text "V") # named "V"
     ]
   , hsep 200
-    [ circle 80 # named "C"
-    , circle 80 # named "D"
+    [ (circle 80 <> text "S") # named "S"
+    , (circle 80 <> text "E") # named "E"
     ]
   ] # center
     # pad 1.6
-    # connectPerim' (with & arrowShaft .~ arc xDir ((-1/6) @@ turn) & arrowHead .~ dart & headLength .~ small) "A" "B" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowShaft .~ arc xDir ((-4/6) @@ turn) & arrowHead .~ dart & headLength .~ small) "A" "A" ((  6/16) @@ turn) (4/16 @@ turn)
+    # connectPerim' (with & arrowShaft .~ arc xDir ((-1/6) @@ turn) & arrowHead .~ dart & headLength .~ small) "J" "V" ((-15/16) @@ turn) (7/16 @@ turn)
+    # connectPerim' (with & arrowShaft .~ arc xDir ((-4/6) @@ turn) & arrowHead .~ dart & headLength .~ small) "J" "J" ((  6/16) @@ turn) (4/16 @@ turn)
+    # fontSize (normalized 0.05)
 
 genFiles :: IO ()
 genFiles = svgToFile "images/gen/hw-json/state-transition.svg"           (mkWidth 1024) diaStateTransition
