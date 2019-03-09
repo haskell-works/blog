@@ -138,7 +138,8 @@ diaRank1 = rect 16 12 # lc white <> body # font "Consolas,monaco,monospace"
 
 run :: IO ()
 run = do
-  IO.createDirectoryIfMissing True "output/hw-json"
-  renderSVG "output/hw-json/rank-1.svg" (mkWidth 1024) diaRank1
-  renderSVG "output/hw-json/full-railroad.svg" (mkWidth 1024) fullRailroadDiagram
-  renderSVG "output/hw-json/each-transition.svg" (mkWidth 1024) eachTransition
+  let prefix = "images/gen/hw-json"
+  IO.createDirectoryIfMissing True prefix
+  renderSVG (prefix <> "/rank-1.svg"          ) (mkWidth 1024) diaRank1
+  renderSVG (prefix <> "/full-railroad.svg"   ) (mkWidth 1024) fullRailroadDiagram
+  renderSVG (prefix <> "/each-transition.svg" ) (mkWidth 1024) eachTransition

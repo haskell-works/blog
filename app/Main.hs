@@ -10,11 +10,14 @@ import Hakyll.Web.Pandoc
 import Image.LaTeX.Render        (defaultEnv, displaymath, imageForFormula)
 import Image.LaTeX.Render.Pandoc
 
-{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
+import qualified Blog.Doc.Json.Slides as SLIDES
 
+{-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
 main :: IO ()
 main = do
+  SLIDES.run
+
   renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
 
   hakyll $ do
