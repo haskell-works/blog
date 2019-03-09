@@ -2,11 +2,12 @@
 {-# LANGUAGE GADTs            #-}
 {-# LANGUAGE TypeFamilies     #-}
 
-module Blog.Doc.Json.Slides where
+module Blog.Diagrams.Json.StateRailroad where
 
+import Blog.Data.Json.StateMachine
 import Blog.Doc.Frame
-import Blog.Doc.Json.StateMachine
 import Blog.Doc.Json.Text
+import Blog.Svg
 import Diagrams.Backend.SVG
 import Diagrams.Prelude
 
@@ -136,10 +137,8 @@ diaRank1 = rect 16 12 # lc white <> body # font "Consolas,monaco,monospace"
   where body :: Diagram B
         body = highlightText "abc" "" []
 
-run :: IO ()
-run = do
-  let prefix = "images/gen/hw-json"
-  IO.createDirectoryIfMissing True prefix
-  renderSVG (prefix <> "/rank-1.svg"          ) (mkWidth 1024) diaRank1
-  renderSVG (prefix <> "/full-railroad.svg"   ) (mkWidth 1024) fullRailroadDiagram
-  renderSVG (prefix <> "/each-transition.svg" ) (mkWidth 1024) eachTransition
+genFiles :: IO ()
+genFiles = do
+  svgToFile "images/gen/hw-json/rank-1.svg"           (mkWidth 1024) diaRank1
+  svgToFile "images/gen/hw-json/full-railroad.svg"    (mkWidth 1024) fullRailroadDiagram
+  svgToFile "images/gen/hw-json/each-transition.svg"  (mkWidth 1024) eachTransition

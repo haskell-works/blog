@@ -10,13 +10,13 @@ import Hakyll.Web.Pandoc
 import Image.LaTeX.Render        (defaultEnv, displaymath, imageForFormula)
 import Image.LaTeX.Render.Pandoc
 
-import qualified Blog.Doc.Json.Slides as SLIDES
+import qualified Blog.Diagrams.All as ALL
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
 main :: IO ()
 main = do
-  SLIDES.run
+  ALL.genFiles
 
   renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
 

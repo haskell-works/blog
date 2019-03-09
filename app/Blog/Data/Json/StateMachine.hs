@@ -1,4 +1,4 @@
-module Blog.Doc.Json.StateMachine where
+module Blog.Data.Json.StateMachine where
 
 import Data.Char
 
