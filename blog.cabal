@@ -44,6 +44,7 @@ executable site
   other-modules:      Blog.Data.Json.StateMachine
                     , Blog.Diagrams.All
                     , Blog.Diagrams.Json.StateRailroad
+                    , Blog.Diagrams.Json.StateTransition
                     , Blog.Directory
                     , Blog.Doc.Frame
                     , Blog.Doc.Json.Text
