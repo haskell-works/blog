@@ -1,5 +1,6 @@
---------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
+
+module Main where
 
 import Codec.Picture             (writeDynamicPng)
 import Data.Monoid               ((<>))
@@ -11,7 +12,7 @@ import Image.LaTeX.Render.Pandoc
 
 {-# ANN module ("HLint: ignore Redundant do"        :: String) #-}
 
---------------------------------------------------------------------------------
+
 main :: IO ()
 main = do
   renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
