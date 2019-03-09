@@ -6,21 +6,31 @@ build-type:         Simple
 
 common base                   { build-depends: base                   >= 4          && < 5        }
 
+common JuicyPixels            { build-depends: JuicyPixels            >= 3          && < 4        }
+common diagrams               { build-depends: diagrams               >= 1.4        && < 1.5      }
+common diagrams-contrib       { build-depends: diagrams-contrib                                   }
+common diagrams-core          { build-depends: diagrams-core                                      }
+common diagrams-lib           { build-depends: diagrams-lib                                       }
+common diagrams-svg           { build-depends: diagrams-svg                                       }
 common hakyll                 { build-depends: hakyll                 >= 4.12       && < 4.13     }
-common pandoc                 { build-depends: pandoc                 >= 2.2        && < 2.3      }
+common latex-formulae-hakyll  { build-depends: latex-formulae-hakyll  >= 0.2        && < 0.3      }
 common latex-formulae-image   { build-depends: latex-formulae-image   >= 0.1        && < 0.2      }
 common latex-formulae-pandoc  { build-depends: latex-formulae-pandoc  >= 0.2        && < 0.3      }
-common latex-formulae-hakyll  { build-depends: latex-formulae-hakyll  >= 0.2        && < 0.3      }
-common JuicyPixels            { build-depends: JuicyPixels            >= 3          && < 4        }
+common pandoc                 { build-depends: pandoc                 >= 2.2        && < 2.3      }
 
 executable site
   import:   base
+          , JuicyPixels
+          , diagrams
+          , diagrams-contrib
+          , diagrams-core
+          , diagrams-lib
+          , diagrams-svg
           , hakyll
-          , pandoc
+          , latex-formulae-hakyll
           , latex-formulae-image
           , latex-formulae-pandoc
-          , latex-formulae-hakyll
-          , JuicyPixels
+          , pandoc
   main-is:          site.hs
   ghc-options:      -threaded
   default-language: Haskell2010
