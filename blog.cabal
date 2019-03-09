@@ -12,11 +12,13 @@ common diagrams-contrib       { build-depends: diagrams-contrib                 
 common diagrams-core          { build-depends: diagrams-core                                      }
 common diagrams-lib           { build-depends: diagrams-lib                                       }
 common diagrams-svg           { build-depends: diagrams-svg                                       }
+common directory              { build-depends: directory                                          }
 common hakyll                 { build-depends: hakyll                 >= 4.12       && < 4.13     }
 common latex-formulae-hakyll  { build-depends: latex-formulae-hakyll  >= 0.2        && < 0.3      }
 common latex-formulae-image   { build-depends: latex-formulae-image   >= 0.1        && < 0.2      }
 common latex-formulae-pandoc  { build-depends: latex-formulae-pandoc  >= 0.2        && < 0.3      }
 common pandoc                 { build-depends: pandoc                 >= 2.2        && < 2.3      }
+common SVGFonts               { build-depends: SVGFonts               >= 1.7        && < 1.9      }
 
 executable site
   import:   base
@@ -26,13 +28,18 @@ executable site
           , diagrams-core
           , diagrams-lib
           , diagrams-svg
+          , directory
           , hakyll
           , latex-formulae-hakyll
           , latex-formulae-image
           , latex-formulae-pandoc
           , pandoc
+          , SVGFonts
   main-is:            Main.hs
   hs-source-dirs:     app
-  other-modules:      Blog.Doc.Json.StateMachine
+  other-modules:      Blog.Doc.Frame
+                    , Blog.Doc.Json.Slides
+                    , Blog.Doc.Json.StateMachine
+                    , Blog.Doc.Json.Text
   ghc-options:        -threaded
   default-language:   Haskell2010
