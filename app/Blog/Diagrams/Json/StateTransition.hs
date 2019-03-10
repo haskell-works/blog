@@ -47,23 +47,12 @@ connectPerim'' opts n1 n2 a1 a2 f =
 diaStateTransition :: Diagram B
 diaStateTransition = vsep 200
   [ hsep 200
-    [ (circle 80 <> text "J")
-      # center
-      # named "J"
-      -- # orbit (unitX # rotateBy ( 5/16) # scale 2.2) (text "X")
-      -- # orbit (unitX # rotateBy ( 1/16) # scale 3.5) (text "Y")
-    , (circle 80 <> text "V") # named "V"
-      -- # orbit (unitX # rotateBy ( 1/16) # scale 2.2) (text "X")
-      -- # orbit (unitX # rotateBy (-3/16) # scale 3.5) (text "Y")
+    [ (text "J" <> circle 80 # fc cyan) # named "J"
+    , (text "V" <> circle 80 # fc cyan) # named "V"
     ]
   , hsep 200
-    [ (circle 80 <> text "S") # named "S"
-      -- # orbit (unitX # rotateBy ( 9/16) # scale 2.2) (text "X")
-      -- # orbit (unitX # rotateBy ( 5/16) # scale 3.5) (text "Y")
-    , (circle 80 <> text "E") # named "E"
-      -- # orbit (unitX # rotateBy ( 9/16) # scale 2.2) (text "X")
-      -- # orbit (unitX # rotateBy ( 5/16) # scale 3.5) (text "Y")
-      -- # showEnvelope
+    [ (text "S" <> circle 80 # fc cyan) # named "S"
+    , (text "E" <> circle 80 # fc cyan) # named "E"
     ]
   ] # center
     # pad 1.4
