@@ -50,25 +50,42 @@ diaStateTransition = vsep 200
     [ (circle 80 <> text "J")
       # center
       # named "J"
-      # orbit (unitX # rotateBy (2/6) # scale 2.2) (text "Hello worlds" # fontSize (normalized 0.05))
+      -- # orbit (unitX # rotateBy ( 5/16) # scale 2.2) (text "X")
+      -- # orbit (unitX # rotateBy ( 1/16) # scale 3.5) (text "Y")
     , (circle 80 <> text "V") # named "V"
+      -- # orbit (unitX # rotateBy ( 1/16) # scale 2.2) (text "X")
+      -- # orbit (unitX # rotateBy (-3/16) # scale 3.5) (text "Y")
     ]
   , hsep 200
     [ (circle 80 <> text "S") # named "S"
+      -- # orbit (unitX # rotateBy ( 9/16) # scale 2.2) (text "X")
+      -- # orbit (unitX # rotateBy ( 5/16) # scale 3.5) (text "Y")
     , (circle 80 <> text "E") # named "E"
+      -- # orbit (unitX # rotateBy ( 9/16) # scale 2.2) (text "X")
+      -- # orbit (unitX # rotateBy ( 5/16) # scale 3.5) (text "Y")
+      -- # showEnvelope
     ]
   ] # center
-    # pad 1.6
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "E" "S" ( 9/16 @@ turn) (15/16 @@ turn) (\x -> x # showEnvelope # orbit (unitX # rotateBy 0) (square 20) # lc red  )
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "J" "J" ( 6/16 @@ turn) ( 4/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc green)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "S" (13/16 @@ turn) ( 3/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc blue)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "V" ( 1/16 @@ turn) ( 7/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc purple)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "E" ( 1/16 @@ turn) ( 7/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc orange)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "J" ( 5/16 @@ turn) (11/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc yellow)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "S" "S" (11/16 @@ turn) ( 9/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc cyan)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "V" "J" ( 9/16 @@ turn) (15/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc gold)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "S" (10/16 @@ turn) ( 2/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc pink)
-    # connectPerim'' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "V" "V" ( 3/16 @@ turn) ( 1/16 @@ turn) (\x -> x #                orbit (unitX # rotateBy (2/6)) (square 20) # lc aqua)
+    # pad 1.4
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "E" "S" ( 9/16 @@ turn) (15/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "J" "J" ( 6/16 @@ turn) ( 4/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "S" (13/16 @@ turn) ( 3/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "V" ( 1/16 @@ turn) ( 7/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "E" ( 1/16 @@ turn) ( 7/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "J" ( 5/16 @@ turn) (11/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "S" "S" (11/16 @@ turn) ( 9/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "V" "J" ( 9/16 @@ turn) (15/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "S" (10/16 @@ turn) ( 2/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "V" "V" ( 3/16 @@ turn) ( 1/16 @@ turn)
+    # withName "J" (\s -> atop (text "JX" # moveTo (location s) # moveTo ( (-70) ^&   140 )))
+    # withName "J" (\s -> atop (text "JY" # moveTo (location s) # moveTo (  180  ^&    80 )))
+    # withName "J" (\s -> atop (text "JZ" # moveTo (location s) # moveTo (   80  ^& (-180))))
+    # withName "V" (\s -> atop (text "VX" # moveTo (location s) # moveTo (  140  ^&    70 )))
+    # withName "V" (\s -> atop (text "VY" # moveTo (location s) # moveTo ((-180) ^&  (-80))))
+    # withName "S" (\s -> atop (text "SX" # moveTo (location s) # moveTo (  180  ^&    80 )))
+    # withName "S" (\s -> atop (text "SY" # moveTo (location s) # moveTo ( (-80) ^&   180 )))
+    # withName "S" (\s -> atop (text "SZ" # moveTo (location s) # moveTo ( (-70) ^& (-140))))
+    # withName "E" (\s -> atop (text "EY" # moveTo (location s) # moveTo ((-180) ^&  (-80))))
     # fontSize (normalized 0.05)
 
 genFiles :: IO ()
