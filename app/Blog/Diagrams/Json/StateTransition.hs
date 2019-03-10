@@ -47,12 +47,12 @@ connectPerim'' opts n1 n2 a1 a2 f =
 diaStateTransition :: Diagram B
 diaStateTransition = vsep 200
   [ hsep 200
-    [ (text "J" <> circle 80 # fc cyan) # named "J"
-    , (text "V" <> circle 80 # fc cyan) # named "V"
+    [ text "JSON"    <> circle 75 <> (circle 80 # fc cyan # named "J")
+    , text "Value"                <> (circle 80 # fc cyan # named "V")
     ]
   , hsep 200
-    [ (text "S" <> circle 80 # fc cyan) # named "S"
-    , (text "E" <> circle 80 # fc cyan) # named "E"
+    [ text "String"               <> (circle 80 # fc cyan # named "S")
+    , text "Escaped"              <> (circle 80 # fc cyan # named "E")
     ]
   ] # center
     # pad 1.4
