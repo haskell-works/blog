@@ -45,18 +45,16 @@ diaStateTransition = vsep 200
     ]
   ] # center
     # pad 1.6
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ((-1/6) @@ turn)) "J" "V" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ((-4/6) @@ turn)) "J" "J" ((  6/16) @@ turn) (4/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "E" "S" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "J" "J" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "J" "S" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "J" "V" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "S" "E" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "S" "J" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "S" "S" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "J" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "S" ((-15/16) @@ turn) (7/16 @@ turn)
-    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "V" ((-15/16) @@ turn) (7/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "E" "S" ( 9/16 @@ turn) (15/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "J" "J" ( 6/16 @@ turn) ( 4/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "S" (13/16 @@ turn) ( 3/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "J" "V" ( 1/16 @@ turn) ( 7/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "E" ( 1/16 @@ turn) ( 7/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "S" "J" ( 5/16 @@ turn) (11/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "S" "S" (11/16 @@ turn) ( 9/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "V" "J" ( 9/16 @@ turn) (15/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "S" (10/16 @@ turn) ( 2/16 @@ turn)
+    # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "V" "V" ( 3/16 @@ turn) ( 1/16 @@ turn)
     # fontSize (normalized 0.05)
 
 genFiles :: IO ()
