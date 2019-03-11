@@ -66,15 +66,16 @@ diaStateTransition = vsep 200
     # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir ( -2/16 @@ turn)) "V" "J" ( 9/16 @@ turn) (15/16 @@ turn)
     # connectPerim' (with & arrowHead .~ dart & headLength .~ small                                          ) "V" "S" (10/16 @@ turn) ( 2/16 @@ turn)
     # connectPerim' (with & arrowHead .~ dart & headLength .~ small & arrowShaft .~ arc xDir (-10/16 @@ turn)) "V" "V" ( 3/16 @@ turn) ( 1/16 @@ turn)
-    # withName "J" (\s -> atop (text "JX" # moveTo (location s) # moveTo ( (-70) ^&   140 )))
-    # withName "J" (\s -> atop (text "JY" # moveTo (location s) # moveTo (  180  ^&    80 )))
-    # withName "J" (\s -> atop (text "JZ" # moveTo (location s) # moveTo (   80  ^& (-180))))
-    # withName "V" (\s -> atop (text "VX" # moveTo (location s) # moveTo (  140  ^&    70 )))
-    # withName "V" (\s -> atop (text "VY" # moveTo (location s) # moveTo ((-180) ^&  (-80))))
-    # withName "S" (\s -> atop (text "SX" # moveTo (location s) # moveTo (  180  ^&    80 )))
-    # withName "S" (\s -> atop (text "SY" # moveTo (location s) # moveTo ( (-80) ^&   180 )))
-    # withName "S" (\s -> atop (text "SZ" # moveTo (location s) # moveTo ( (-70) ^& (-140))))
-    # withName "E" (\s -> atop (text "EY" # moveTo (location s) # moveTo ((-180) ^&  (-80))))
+    # withName "J" (\s -> atop (text "A-Za-z0-9+-" # moveTo (location s) # moveTo (  180  ^&    80 )))  -- JV
+    # withName "J" (\s -> atop (text "\""          # moveTo (location s) # moveTo (   80  ^& (-180))))  -- JS
+    # withName "J" (\s -> atop (text "*"           # moveTo (location s) # moveTo ( (-60) ^&   130 )))  -- JJ
+    # withName "V" (\s -> atop (text "A-Za-z0-9+-" # moveTo (location s) # moveTo (   60  ^&   130 )))  -- VV
+    # withName "V" (\s -> atop (text "*"           # moveTo (location s) # moveTo ((-180) ^&  (-80))))  -- VJ
+    # withName "S" (\s -> atop (text "\\"          # moveTo (location s) # moveTo (  180  ^&    80 )))  -- SE
+    # withName "S" (\s -> atop (text "\""          # moveTo (location s) # moveTo ( (-80) ^&   180 )))  -- SJ
+    # withName "S" (\s -> atop (text "*"           # moveTo (location s) # moveTo ( (-70) ^& (-130))))  -- SS
+    # withName "E" (\s -> atop (text "*"           # moveTo (location s) # moveTo ((-180) ^&  (-80))))  -- ES
+    # atop                     (text "\""          # moveTo (30 ^& (-30)))                              -- VS
     # fontSize (normalized 0.05)
 
 genFiles :: IO ()
