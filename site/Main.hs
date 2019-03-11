@@ -17,7 +17,7 @@ main = do
   renderFormulae <- initFormulaCompilerDataURI 1000 defaultEnv
 
   hakyll $ do
-    match "images/*" $ do
+    match "images/**" $ do
       route   idRoute
       compile copyFileCompiler
 
