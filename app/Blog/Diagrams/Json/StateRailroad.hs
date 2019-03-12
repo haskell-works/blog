@@ -35,10 +35,10 @@ selectTransition :: Char -> Diagram B
 selectTransition c = transitionDiagram c (transitionFor c)
 
 fullRailroadDiagram :: Diagram B
-fullRailroadDiagram = enframe (hsep 0 (fmap selectTransition jsonText) # center)
+fullRailroadDiagram = hsep 0 (fmap selectTransition jsonText) # center
 
 eachTransition :: Diagram B
-eachTransition = enframe $ vsep 1
+eachTransition = vsep 1
   [ hsep 1
     [ legend
     , transition1 "A"
@@ -46,17 +46,13 @@ eachTransition = enframe $ vsep 1
     , transition3 "C"
     , transition4 "D"
     ] # scale 2 # center
-  , text "A: hello"
-  , text "B: hello"
-  , text "D: hello"
-  , text "D: hello"
-  ]
+  ] # withName "in-escape" (\s d -> d # fc blue)
   where legend = mconcat
-          [ rect 3 9 # translateY 2
-          , text "InEscape" # translateY 6 # alignR
-          , text "InString" # translateY 4 # alignR
-          , text "InValue"  # translateY 2 # alignR
-          , text "InJson"
+          [ text "Escape" # translateY 6 # alignR
+          , text "String" # translateY 4 # alignR
+          , text "Value"  # translateY 2 # alignR
+          , text "Json"   # translateY 0 # alignR
+          , rect 3 9      # translateY 0 # opacity 0
           ]
 
 smSingleTransition :: Int -> Int -> QDiagram B V2 Double Any
