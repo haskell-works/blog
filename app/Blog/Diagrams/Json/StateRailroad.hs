@@ -117,10 +117,10 @@ eachTransition = vsep 1
 eachTransition2 :: Diagram B
 eachTransition2 = vsep 1
   [ hsep 1
-    [ transition1 (repeat (lc green )) "A"
-    , transition2 (repeat (lc orange)) "B"
-    , transition3 (repeat (lc brown )) "C"
-    , transition4 (repeat (lc blue  )) "D"
+    [ transition1 (repeat (lc green )) ""
+    , transition2 (repeat (lc orange)) ""
+    , transition3 (repeat (lc brown )) ""
+    , transition4 (repeat (lc blue  )) ""
     ] # scale 2 # center
   ] # withName "in-escape" (\s d -> d # fc blue)
 
@@ -139,65 +139,71 @@ e = 2
 s = 1
 j = 0
 
+mkTransitionLabel :: String -> [QDiagram B V2 Double Any]
+mkTransitionLabel "" = []
+mkTransitionLabel label =
+  [ text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # fc black
+  ]
+
 transition0 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
-transition0 cs label = mconcat
-  [ vrule 9 # lc silver # translateY 2
-  , vrule 9 # lc silver # translateY 2 # translateX 3
+transition0 cs label = mconcat $
+  [ vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2)
+  , vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2) # translateX 3
   , [ smSingleTransition v v # (cs !! 1)
     , smSingleTransition e e # (cs !! 3)
     , smSingleTransition s s # (cs !! 2)
     , smSingleTransition j j # (cs !! 0)
     ] # mconcat # opacityGroup 0.5
-  , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # fc black
-  ]
+  ] <> mkTransitionLabel label
+  where labelHeight = if label == "" then 0 else 2
 
 transition1 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
-transition1 cs label = mconcat
-  [ vrule 9 # lc silver # translateY 2
-  , vrule 9 # lc silver # translateY 2 # translateX 3
+transition1 cs label = mconcat $
+  [ vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2)
+  , vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2) # translateX 3
   , [ smSingleTransition v j # (cs !! v)
     , smSingleTransition e s # (cs !! e)
     , smSingleTransition s s # (cs !! s)
     , smSingleTransition j j # (cs !! j)
     ] # mconcat # opacityGroup 0.5
-  , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
-  ]
+  ] <> mkTransitionLabel label
+  where labelHeight = if label == "" then 0 else 2
 
 transition2 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
-transition2 cs label = mconcat
-  [ vrule 9 # lc silver # translateY 2
-  , vrule 9 # lc silver # translateY 2 # translateX 3
+transition2 cs label = mconcat $
+  [ vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2)
+  , vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2) # translateX 3
   , [ smSingleTransition v s # (cs !! v)
     , smSingleTransition e s # (cs !! e)
     , smSingleTransition s j # (cs !! s)
     , smSingleTransition j s # (cs !! j)
     ] # mconcat # opacityGroup 0.5
-  , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
-  ]
+  ] <> mkTransitionLabel label
+  where labelHeight = if label == "" then 0 else 2
 
 transition3 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
-transition3 cs label = mconcat
-  [ vrule 9 # lc silver # translateY 2
-  , vrule 9 # lc silver # translateY 2 # translateX 3
+transition3 cs label = mconcat $
+  [ vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2)
+  , vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2) # translateX 3
   , [ smSingleTransition v v # (cs !! v)
     , smSingleTransition e s # (cs !! e)
     , smSingleTransition s s # (cs !! s)
     , smSingleTransition j v # (cs !! j)
     ] # mconcat # opacityGroup 0.5
-  , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
-  ]
+  ] <> mkTransitionLabel label
+  where labelHeight = if label == "" then 0 else 2
 
 transition4 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
-transition4 cs label = mconcat
-  [ vrule 9 # lc silver # translateY 2
-  , vrule 9 # lc silver # translateY 2 # translateX 3
+transition4 cs label = mconcat $
+  [ vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2)
+  , vrule (labelHeight + 7) # lc silver # translateY (3 - labelHeight / 2) # translateX 3
   , [ smSingleTransition v j # (cs !! v)
     , smSingleTransition e s # (cs !! e)
     , smSingleTransition s e # (cs !! s)
     , smSingleTransition j j # (cs !! j)
     ] # mconcat # opacityGroup 0.5
-  , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
-  ]
+  ] <> mkTransitionLabel label
+  where labelHeight = if label == "" then 0 else 2
 
 jsonText :: String
 jsonText = "{\"key\": [12, \"[\\\"a\\\"]\"]}"
