@@ -79,6 +79,23 @@ fullRailroadDiagram2 = hsep 0 mkDiagram # center
               ] <> repeat [id, id, id, id, id]
         hi = lc black . lw 3
 
+fullRailroadDiagram3a :: Diagram B
+fullRailroadDiagram3a = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
+        cs  = [ [ id, id, id, id, id ]
+              , [ id, id, id, id, id ]
+              , [ id, id, id, id, id ]
+              ] <> repeat [id, id, id, id, id]
+
+fullRailroadDiagram3b :: Diagram B
+fullRailroadDiagram3b = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
+        cs  = [ [ hi, hi, hi, hi, id ]
+              , [ hi, id, hi, id, id ]
+              , [ hi, id, hi, id, id ]
+              ] <> repeat [id, id, id, id, id]
+        hi = lc black . lw 8
+
 eachTransition :: Diagram B
 eachTransition = vsep 1
   [ hsep 1
@@ -97,6 +114,16 @@ eachTransition = vsep 1
           , rect 3 9      # translateY 0 # opacity 0
           ]
 
+eachTransition2 :: Diagram B
+eachTransition2 = vsep 1
+  [ hsep 1
+    [ transition1 (repeat (lc green )) "A"
+    , transition2 (repeat (lc orange)) "B"
+    , transition3 (repeat (lc brown )) "C"
+    , transition4 (repeat (lc blue  )) "D"
+    ] # scale 2 # center
+  ] # withName "in-escape" (\s d -> d # fc blue)
+
 smSingleTransition :: Int -> Int -> QDiagram B V2 Double Any
 smSingleTransition a b = fromSegments
   [ bézier3
@@ -107,14 +134,19 @@ smSingleTransition a b = fromSegments
   where ax = 2 * a
         bx = 2 * b
 
+v = 3
+e = 2
+s = 1
+j = 0
+
 transition0 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String -> QDiagram B V2 Double Any
 transition0 cs label = mconcat
   [ vrule 9 # lc silver # translateY 2
   , vrule 9 # lc silver # translateY 2 # translateX 3
-  , [ smSingleTransition 3 3 # (cs !! 3)
-    , smSingleTransition 2 2 # (cs !! 2)
-    , smSingleTransition 1 1 # (cs !! 1)
-    , smSingleTransition 0 0 # (cs !! 0)
+  , [ smSingleTransition v v # (cs !! 1)
+    , smSingleTransition e e # (cs !! 3)
+    , smSingleTransition s s # (cs !! 2)
+    , smSingleTransition j j # (cs !! 0)
     ] # mconcat # opacityGroup 0.5
   , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # fc black
   ]
@@ -123,10 +155,10 @@ transition1 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String 
 transition1 cs label = mconcat
   [ vrule 9 # lc silver # translateY 2
   , vrule 9 # lc silver # translateY 2 # translateX 3
-  , [ smSingleTransition 3 2 # (cs !! 3)
-    , smSingleTransition 2 2 # (cs !! 2)
-    , smSingleTransition 1 0 # (cs !! 1)
-    , smSingleTransition 0 0 # (cs !! 0)
+  , [ smSingleTransition v j # (cs !! v)
+    , smSingleTransition e s # (cs !! e)
+    , smSingleTransition s s # (cs !! s)
+    , smSingleTransition j j # (cs !! j)
     ] # mconcat # opacityGroup 0.5
   , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
   ]
@@ -135,10 +167,10 @@ transition2 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String 
 transition2 cs label = mconcat
   [ vrule 9 # lc silver # translateY 2
   , vrule 9 # lc silver # translateY 2 # translateX 3
-  , [ smSingleTransition 3 2 # (cs !! 3)
-    , smSingleTransition 2 0 # (cs !! 2)
-    , smSingleTransition 1 2 # (cs !! 1)
-    , smSingleTransition 0 2 # (cs !! 0)
+  , [ smSingleTransition v s # (cs !! v)
+    , smSingleTransition e s # (cs !! e)
+    , smSingleTransition s j # (cs !! s)
+    , smSingleTransition j s # (cs !! j)
     ] # mconcat # opacityGroup 0.5
   , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
   ]
@@ -147,10 +179,10 @@ transition3 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String 
 transition3 cs label = mconcat
   [ vrule 9 # lc silver # translateY 2
   , vrule 9 # lc silver # translateY 2 # translateX 3
-  , [ smSingleTransition 3 2 # (cs !! 3)
-    , smSingleTransition 2 2 # (cs !! 2)
-    , smSingleTransition 1 1 # (cs !! 1)
-    , smSingleTransition 0 1 # (cs !! 0)
+  , [ smSingleTransition v v # (cs !! v)
+    , smSingleTransition e s # (cs !! e)
+    , smSingleTransition s s # (cs !! s)
+    , smSingleTransition j v # (cs !! j)
     ] # mconcat # opacityGroup 0.5
   , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
   ]
@@ -159,10 +191,10 @@ transition4 :: [QDiagram B V2 Double Any -> QDiagram B V2 Double Any] -> String 
 transition4 cs label = mconcat
   [ vrule 9 # lc silver # translateY 2
   , vrule 9 # lc silver # translateY 2 # translateX 3
-  , [ smSingleTransition 3 2 # (cs !! 3)
-    , smSingleTransition 2 3 # (cs !! 2)
-    , smSingleTransition 1 0 # (cs !! 1)
-    , smSingleTransition 0 0 # (cs !! 0)
+  , [ smSingleTransition v j # (cs !! v)
+    , smSingleTransition e s # (cs !! e)
+    , smSingleTransition s e # (cs !! s)
+    , smSingleTransition j j # (cs !! j)
     ] # mconcat # opacityGroup 0.5
   , text label # translateX 1.5 # translateY (-1.5) # font "Consolas,monaco,monospace" # (cs !! 4)
   ]
@@ -177,7 +209,10 @@ diaRank1 = rect 16 12 # lc white <> body # font "Consolas,monaco,monospace"
 
 genFiles :: IO ()
 genFiles = do
-  svgToFile "images/gen/hw-json/rank-1.svg"           (mkWidth 1024) diaRank1
-  svgToFile "images/gen/hw-json/full-railroad.svg"    (mkWidth 1024) fullRailroadDiagram
-  svgToFile "images/gen/hw-json/full-railroad-2.svg"  (mkWidth 1024) fullRailroadDiagram2
-  svgToFile "images/gen/hw-json/each-transition.svg"  (mkWidth 1024) eachTransition
+  svgToFile "images/gen/hw-json/rank-1.svg"             (mkWidth 1024) diaRank1
+  svgToFile "images/gen/hw-json/full-railroad.svg"      (mkWidth 1024) fullRailroadDiagram
+  svgToFile "images/gen/hw-json/full-railroad-2.svg"    (mkWidth 1024) fullRailroadDiagram2
+  svgToFile "images/gen/hw-json/full-railroad-3-a.svg"  (mkWidth 1024) fullRailroadDiagram3a
+  svgToFile "images/gen/hw-json/full-railroad-3-b.svg"  (mkWidth 1024) fullRailroadDiagram3b
+  svgToFile "images/gen/hw-json/each-transition.svg"    (mkWidth 1024) eachTransition
+  svgToFile "images/gen/hw-json/each-transition-2.svg"  (mkWidth 1024) eachTransition2
