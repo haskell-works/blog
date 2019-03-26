@@ -96,6 +96,38 @@ fullRailroadDiagram3b = hsep 0 mkDiagram # center
               ] <> repeat [id, id, id, id, id]
         hi = lc black . lw 8
 
+fullRailroadDiagram3c :: Diagram B
+fullRailroadDiagram3c = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
+        cs  = [ [ aa, lo, aa, aa, lo ]
+              , [ aa, aa, lo, lo, lo ]
+              , [ bb, bb, lo, lo, lo ]
+              ] <> repeat [id, id, id, id, id]
+        lo = lc gray  . lw 8
+        aa = lc green . lw 8
+        bb = lc blue  . lw 8
+
+fullRailroadDiagram3d :: Diagram B
+fullRailroadDiagram3d = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
+        cs  = [ [ aa, lo, aa, aa, lo ]
+              , [ aa, aa, lo, lo, lo ]
+              , [ bb, bb, lo, lo, lo ]
+              ] <> repeat [id, id, id, id, id]
+        lo = lc gray  . lw 8
+        aa = lc green . lw 8
+        bb = lc blue  . lw 8
+
+fullRailroadDiagram3e :: Diagram B
+fullRailroadDiagram3e = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
+        cs  = [ [ hi, lo, hi, hi, lo ]
+              , [ hi, hi, lo, lo, lo ]
+              , [ hi, hi, lo, lo, lo ]
+              ] <> repeat [id, id, id, id, id]
+        lo = lc gray  . lw 8
+        hi = lc red   . lw 8
+
 eachTransition :: Diagram B
 eachTransition = vsep 1
   [ hsep 1
@@ -220,5 +252,8 @@ genFiles = do
   svgToFile "images/gen/hw-json/full-railroad-2.svg"    (mkWidth 1024) fullRailroadDiagram2
   svgToFile "images/gen/hw-json/full-railroad-3-a.svg"  (mkWidth 1024) fullRailroadDiagram3a
   svgToFile "images/gen/hw-json/full-railroad-3-b.svg"  (mkWidth 1024) fullRailroadDiagram3b
+  svgToFile "images/gen/hw-json/full-railroad-3-c.svg"  (mkWidth 1024) fullRailroadDiagram3c
+  svgToFile "images/gen/hw-json/full-railroad-3-d.svg"  (mkWidth 1024) fullRailroadDiagram3d
+  svgToFile "images/gen/hw-json/full-railroad-3-e.svg"  (mkWidth 1024) fullRailroadDiagram3e
   svgToFile "images/gen/hw-json/each-transition.svg"    (mkWidth 1024) eachTransition
   svgToFile "images/gen/hw-json/each-transition-2.svg"  (mkWidth 1024) eachTransition2
