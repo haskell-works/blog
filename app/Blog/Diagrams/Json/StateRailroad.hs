@@ -79,6 +79,38 @@ fullRailroadDiagram2 = hsep 0 mkDiagram # center
               ] <> repeat [id, id, id, id, id]
         hi = lc black . lw 3
 
+fullRailroadDiagram2a :: Diagram B
+fullRailroadDiagram2a = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' jsonText) cs
+        cs  = [ [ hi, lo, id, id, id ]
+              , [ hi, lo, id, id, id ]
+              , [ lo, hi, id, id, id ]
+              , [ id, hi, id, lo, id ]
+              , [ id, hi, id, lo, id ]
+              , [ id, hi, id, lo, id ]
+              , [ hi, lo, id, id, id ]
+              , [ hi, lo, id, id, id ]
+              , [ hi, lo, id, id, id ]
+              , [ hi, lo, id, id, id ]
+              , [ id, lo, id, hi, id ]
+              , [ id, lo, id, hi, id ]
+              , [ hi, lo, id, id, id ]
+              , [ hi, lo, id, id, id ]
+              , [ lo, hi, id, id, id ]
+              , [ lo, hi, id, id, id ]
+              , [ lo, id, hi, id, id ]
+              , [ id, lh, id, id, id ]
+              , [ id, lh, id, id, id ]
+              , [ id, id, lh, id, id ]
+              , [ id, lh, id, id, id ]
+              , [ id, lh, id, id, id ]
+              , [ lh, id, id, id, id ]
+              , [ lh, id, id, id, id ]
+              ] <> repeat [id, id, id, id, id]
+        hi = lc black  . lw 3
+        lo = lc cyan   . lw 3
+        lh = lc red    . lw 3
+
 fullRailroadDiagram3a :: Diagram B
 fullRailroadDiagram3a = hsep 0 mkDiagram # center
   where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
@@ -90,18 +122,18 @@ fullRailroadDiagram3a = hsep 0 mkDiagram # center
 fullRailroadDiagram3b :: Diagram B
 fullRailroadDiagram3b = hsep 0 mkDiagram # center
   where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
-        cs  = [ [ hi, hi, hi, hi, id ]
-              , [ hi, hi, id, id, id ]
-              , [ hi, hi, id, id, id ]
+        cs  = [ [ lo, lo, lo, lo, lo ]
+              , [ lo, lo, lo, lo, lo ]
+              , [ lo, lo, lo, lo, lo ]
               ] <> repeat [id, id, id, id, id]
-        hi = lc black . lw 8
+        lo = lc gray  . lw 8
 
 fullRailroadDiagram3c :: Diagram B
 fullRailroadDiagram3c = hsep 0 mkDiagram # center
   where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
-        cs  = [ [ aa, lo, aa, aa, lo ]
+        cs  = [ [ aa, aa, aa, aa, lo ]
               , [ aa, aa, lo, lo, lo ]
-              , [ bb, bb, lo, lo, lo ]
+              , [ bb, bb, bb, bb, lo ]
               ] <> repeat [id, id, id, id, id]
         lo = lc gray  . lw 8
         aa = lc green . lw 8
@@ -110,8 +142,8 @@ fullRailroadDiagram3c = hsep 0 mkDiagram # center
 fullRailroadDiagram3d :: Diagram B
 fullRailroadDiagram3d = hsep 0 mkDiagram # center
   where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
-        cs  = [ [ aa, lo, aa, aa, lo ]
-              , [ aa, aa, lo, lo, lo ]
+        cs  = [ [ aa, aa, aa, aa, lo ]
+              , [ bb, bb, bb, bb, lo ]
               , [ bb, bb, lo, lo, lo ]
               ] <> repeat [id, id, id, id, id]
         lo = lc gray  . lw 8
@@ -121,12 +153,28 @@ fullRailroadDiagram3d = hsep 0 mkDiagram # center
 fullRailroadDiagram3e :: Diagram B
 fullRailroadDiagram3e = hsep 0 mkDiagram # center
   where mkDiagram = zipWith ($) (fmap selectTransition' "\"[\\") cs
-        cs  = [ [ hi, lo, hi, hi, lo ]
+        cs  = [ [ hi, hi, hi, hi, lo ]
               , [ hi, hi, lo, lo, lo ]
               , [ hi, hi, lo, lo, lo ]
               ] <> repeat [id, id, id, id, id]
         lo = lc gray  . lw 8
         hi = lc red   . lw 8
+
+fullRailroadDiagram4a :: Diagram B
+fullRailroadDiagram4a = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[") cs
+        cs  = [ [ id, id, id, id, id ]
+              , [ id, id, id, id, id ]
+              ] <> repeat [id, id, id, id, id]
+
+fullRailroadDiagram4b :: Diagram B
+fullRailroadDiagram4b = hsep 0 mkDiagram # center
+  where mkDiagram = zipWith ($) (fmap selectTransition' "\"[") cs
+        cs  = [ [ aa, aa, aa, aa, lo ]
+              , [ aa, aa, lo, lo, lo ]
+              ] <> repeat [id, id, id, id, id]
+        lo = lc gray   . lw 8
+        aa = lc purple . lw 8
 
 eachTransition :: Diagram B
 eachTransition = vsep 1
@@ -250,10 +298,13 @@ genFiles = do
   svgToFile "images/gen/hw-json/rank-1.svg"             (mkWidth 1024) diaRank1
   svgToFile "images/gen/hw-json/full-railroad.svg"      (mkWidth 1024) fullRailroadDiagram
   svgToFile "images/gen/hw-json/full-railroad-2.svg"    (mkWidth 1024) fullRailroadDiagram2
+  svgToFile "images/gen/hw-json/full-railroad-2-a.svg"  (mkWidth 1024) fullRailroadDiagram2a
   svgToFile "images/gen/hw-json/full-railroad-3-a.svg"  (mkWidth 1024) fullRailroadDiagram3a
   svgToFile "images/gen/hw-json/full-railroad-3-b.svg"  (mkWidth 1024) fullRailroadDiagram3b
   svgToFile "images/gen/hw-json/full-railroad-3-c.svg"  (mkWidth 1024) fullRailroadDiagram3c
   svgToFile "images/gen/hw-json/full-railroad-3-d.svg"  (mkWidth 1024) fullRailroadDiagram3d
   svgToFile "images/gen/hw-json/full-railroad-3-e.svg"  (mkWidth 1024) fullRailroadDiagram3e
+  svgToFile "images/gen/hw-json/full-railroad-4-a.svg"  (mkWidth 1024) fullRailroadDiagram4a
+  svgToFile "images/gen/hw-json/full-railroad-4-b.svg"  (mkWidth 1024) fullRailroadDiagram4b
   svgToFile "images/gen/hw-json/each-transition.svg"    (mkWidth 1024) eachTransition
   svgToFile "images/gen/hw-json/each-transition-2.svg"  (mkWidth 1024) eachTransition2
