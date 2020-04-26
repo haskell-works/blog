@@ -13,7 +13,7 @@ common diagrams-core          { build-depends: diagrams-core                    
 common diagrams-lib           { build-depends: diagrams-lib                                       }
 common diagrams-svg           { build-depends: diagrams-svg                                       }
 common directory              { build-depends: directory                                          }
-common generic-lens           { build-depends: generic-lens                                       }
+common generic-lens           { build-depends: generic-lens           >= 1.2        && < 2.1      }
 common hakyll                 { build-depends: hakyll                 >= 4.12       && < 4.13     }
 common latex-formulae-hakyll  { build-depends: latex-formulae-hakyll  >= 0.2        && < 0.3      }
 common latex-formulae-image   { build-depends: latex-formulae-image   >= 0.1        && < 0.2      }
